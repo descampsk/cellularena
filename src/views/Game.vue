@@ -162,7 +162,7 @@ export default defineComponent({
         })
 
         await this.handleActions(true)
-      } else if (this.playerId === Owner.TWO && waitingForPlayerOne && waitingForPlayerTwo) {
+      } else if (this.playerId === Owner.TWO && this.state.turn + 1 === newGame.turn) {
         console.log('Both players have submitted actions')
 
         this.state.turn = newGame.turn
