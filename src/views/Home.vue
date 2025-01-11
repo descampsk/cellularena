@@ -9,7 +9,11 @@
 
 <script lang="ts">
 // import { ref, set } from '../../firebase'
+import { doc, setDoc } from 'firebase/firestore'
 import { v4 as uuidv4 } from 'uuid'
+import { useFirestore } from 'vuefire'
+import { Game, gameFirestoreConvertor } from '@/game/Game'
+import { Owner } from '@/game/Entity'
 
 export default {
   name: 'HomeView',
@@ -18,12 +22,19 @@ export default {
   },
   methods: {
     async createGame() {
-      const gameId = uuidv4()
-      // await set(ref(this.$firebase.database, `games/${gameId}`), {
-      //   players: { player1: null, player2: null },
-      //   state: {},
-      // })
-      this.$router.push(`/game/${gameId}`)
+      const db = useFirestore()
+      const playerOneUuid = uuidv4()
+      const playerTwoUuid = uuidv4()
+      const game = new Game({
+        seed: '-109498249532328380',
+        playerIds: {
+          [playerOneUuid]: Owner.ONE,
+          [playerTwoUuid]: Owner.TWO,
+        },
+      })
+      const gameDoc = doc(db, 'games', game.id).withConverter(gameFirestoreConvertor)
+      setDoc(gameDoc, game)
+      this.$router.push(`/game/${game.id}/player/${playerOneUuid}`)
     },
     joinGame() {
       if (this.gameId) {

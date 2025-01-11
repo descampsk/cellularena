@@ -1,24 +1,24 @@
 import { type SimplePoint } from './Point'
 
 export enum EntityType {
-  EMPTY = 0,
-  WALL = 1,
-  ROOT = 2,
-  BASIC = 3,
-  HARVESTER = 4,
-  TENTACLE = 5,
-  SPORER = 6,
-  A = 7,
-  B = 8,
-  C = 9,
-  D = 10,
+  EMPTY = 'EMPTY',
+  WALL = 'WALL',
+  ROOT = 'ROOT',
+  BASIC = 'BASIC',
+  HARVESTER = 'HARVESTER',
+  TENTACLE = 'TENTACLE',
+  SPORER = 'SPORER',
+  A = 'A',
+  B = 'B',
+  C = 'C',
+  D = 'D',
 }
 
 export const ProteinTypes = [EntityType.A, EntityType.B, EntityType.C, EntityType.D]
 
 export enum Owner {
-  ME = 1,
-  OPPONENT = 0,
+  TWO = 1,
+  ONE = 0,
   NONE = -1,
 }
 

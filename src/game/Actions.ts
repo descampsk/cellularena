@@ -1,173 +1,128 @@
-import {
-  DirectionToDxDy,
-  EntityTypeToString,
-  type OrganType,
-  ProteinsPerOrgan,
-  type ProteinType,
-  type State,
-} from './State'
-import { Direction, Entity, EntityType, Owner } from './Entity'
+import { type OrganType } from './State'
+import { Direction, EntityType, Owner } from './Entity'
 import { type SimplePoint } from './Point'
+import type { FirestoreDataConverter, QueryDocumentSnapshot } from 'firebase/firestore'
+import { v4 } from 'uuid'
 
-export type Action = {
-  state: State
-  score: number
+export type IAction = {
+  id: string
+  actionType: 'GROW' | 'SPORE' | 'WAIT'
+  turn: number
   target?: SimplePoint
   output: () => string
-  apply: () => void
 }
 
-export class GrowAction implements Action {
-  typeStr: string
+export class GrowAction implements IAction {
+  public id = v4()
 
-  score = 0
+  public actionType: 'GROW' | 'SPORE' | 'WAIT' = 'GROW'
 
   constructor(
-    public state: State,
-    // public organId: number,
-    public from: SimplePoint,
+    public playerId: Owner.ONE | Owner.TWO,
+    public turn: number,
+    public organId: number,
     public target: SimplePoint,
     public type: OrganType,
     public direction: Direction,
     public message?: string,
-  ) {
-    this.typeStr = EntityTypeToString[type]
-  }
+  ) {}
 
   output() {
-    const { organId } = this.state.getEntityAt(this.from)
-    return `GROW ${organId} ${this.target.x} ${this.target.y} ${this.typeStr} ${this.direction} ${this.message || ''}`
-  }
-
-  toString() {
-    const { organId } = this.state.getEntityAt(this.from)
-    return `GROW ${organId} ${this.target.x} ${this.target.y} ${this.typeStr} ${this.direction} ${this.score}`
-  }
-
-  equals(other: GrowAction) {
-    return (
-      this.from.x === other.from.x &&
-      this.from.y === other.from.y &&
-      this.target.x === other.target.x &&
-      this.target.y === other.target.y &&
-      this.type === other.type &&
-      this.direction === other.direction
-    )
-  }
-
-  apply() {
-    const parent = this.state.myOrgans.find((o) => o.x === this.from.x && o.y === this.from.y)
-    if (!parent) {
-      console.error(this)
-      throw new Error(`Cannot find parent organ with coordinates ${this.from.x}, ${this.from.y}`)
-    }
-
-    const newEntity = new Entity(
-      this.target.x,
-      this.target.y,
-      this.type,
-      1, // Assuming the owner is always 1 for grow actions
-      this.state.nextOrganId, // Assuming the new entity has the next id
-      this.direction,
-      parent.organId,
-      parent.type === EntityType.ROOT ? parent.organId : parent.organRootId,
-    )
-    newEntity.isTemporary = true
-    this.state.nextOrganId += 1
-    const entityAtTarget = this.state.getEntityAt(this.target)
-    if (entityAtTarget.owner !== Owner.NONE) {
-      throw new Error(
-        `Cannot grow on top of an existing entity at ${this.target.x}, ${this.target.y}`,
-      )
-    }
-
-    this.state.entities = this.state.entities.filter(
-      (e) => e.x !== this.target.x || e.y !== this.target.y,
-    )
-    this.state.entities.push(newEntity)
-    this.state.myOrgans.push(newEntity)
-    this.state.grid[this.target.x + this.target.y * this.state.width] = newEntity
-    const proteinsNeeded = ProteinsPerOrgan[this.type]
-    for (const protein of Object.keys(proteinsNeeded)) {
-      this.state.myProteins[protein as keyof typeof proteinsNeeded] -=
-        proteinsNeeded[protein as keyof typeof proteinsNeeded]
-    }
-    if (this.type === EntityType.HARVESTER) {
-      const [nx, ny] = DirectionToDxDy[this.direction]
-      const harvestEntity = this.state.getEntityAt({ x: this.target.x + nx, y: this.target.y + ny })
-      if (harvestEntity.isProtein) {
-        harvestEntity.isAlreadyHarvested = true
-        this.state.myProteinsGains[EntityTypeToString[harvestEntity.type] as ProteinType] += 1
-      }
-    }
+    return `GROW ${this.organId} ${this.target.x} ${this.target.y} ${this} ${this.direction} ${this.message || ''}`
   }
 }
 
-export class SporeAction implements Action {
-  score = 0
+export class SporeAction implements IAction {
+  public id = v4()
 
   type = EntityType.ROOT
 
   direction = Direction.X
 
+  public actionType: 'GROW' | 'SPORE' | 'WAIT' = 'SPORE'
+
   constructor(
-    public state: State,
-    public from: SimplePoint,
+    public playerId: Owner.ONE | Owner.TWO,
+    public turn: number,
+    public organId: number,
     public target: SimplePoint,
     public message?: string,
   ) {}
 
   output() {
-    const { organId } = this.state.getEntityAt(this.from)
-    return `SPORE ${organId} ${this.target.x} ${this.target.y} ${this.message || ''}`
-  }
-
-  toString() {
-    const { organId } = this.state.getEntityAt(this.from)
-    return `SPORE ${organId} ${this.target.x} ${this.target.y} ${this.score}`
-  }
-
-  apply() {
-    const newEntity = new Entity(
-      this.target.x,
-      this.target.y,
-      EntityType.ROOT,
-      1, // Assuming the owner is always 1 for spore actions
-      this.state.nextOrganId, // Assuming the new entity has the next id
-      Direction.X, // Assuming direction is X for spores
-      0, // Parent id is always 0 for Root
-      0, // Root id is always 0 for Root
-    )
-    newEntity.isTemporary = true
-    this.state.nextOrganId += 1
-    this.state.entities = this.state.entities.filter(
-      (e) => e.x !== this.target.x || e.y !== this.target.y,
-    )
-    this.state.entities.push(newEntity)
-    this.state.myOrgans.push(newEntity)
-    this.state.requiredActionsCount += 1
-    this.state.grid[this.target.x + this.target.y * this.state.width] = newEntity
-    const proteinsNeeded = ProteinsPerOrgan[EntityType.ROOT]
-    for (const protein of Object.keys(proteinsNeeded)) {
-      this.state.myProteins[protein as keyof typeof proteinsNeeded] -=
-        proteinsNeeded[protein as keyof typeof proteinsNeeded]
-    }
+    return `SPORE ${this.organId} ${this.target.x} ${this.target.y} ${this.message || ''}`
   }
 }
 
-export class WaitAction implements Action {
-  score = -Infinity
+export class WaitAction implements IAction {
+  public id = v4()
+
+  public actionType: 'GROW' | 'SPORE' | 'WAIT' = 'WAIT'
 
   constructor(
-    public state: State,
-    public message?: string,
+    public playerId: Owner.ONE | Owner.TWO,
+    public turn: number,
   ) {}
+  target?: SimplePoint | undefined
 
   output() {
-    return `WAIT ${this.message || ''}`
+    return `WAIT`
   }
 
   apply() {
     // No state changes for wait action
   }
 }
+
+export const actionFirestoreConvertor: FirestoreDataConverter<
+  GrowAction | WaitAction | SporeAction
+> = {
+  toFirestore: (action: GrowAction | SporeAction | WaitAction) => {
+    const { turn, playerId, id } = action
+    if (action instanceof WaitAction) {
+      return {
+        id,
+        actionType: 'WAIT',
+        playerId,
+        turn,
+      }
+    }
+
+    const actionType = action instanceof GrowAction ? 'GROW' : 'SPORE'
+    const { direction, organId, target, type } = action
+    return {
+      id,
+      actionType,
+      playerId,
+      turn,
+      direction,
+      organId,
+      x: target.x,
+      y: target.y,
+      type,
+    }
+  },
+
+  fromFirestore: (snapshot: QueryDocumentSnapshot) => {
+    const data = snapshot.data()
+    const { id } = snapshot
+    const { actionType, turn, playerId } = data
+    let action: GrowAction | WaitAction | SporeAction
+    if (actionType === 'WAIT') {
+      action = new WaitAction(playerId, turn)
+    } else {
+      const { direction, organId, x, y, type } = data
+
+      if (actionType === 'SPORE') {
+        action = new SporeAction(playerId, turn, organId, { x, y })
+      } else {
+        action = new GrowAction(playerId, turn, organId, { x, y }, type, direction)
+      }
+    }
+
+    action.id = id
+    return action
+  },
+}
+
+export type Action = GrowAction | SporeAction | WaitAction
