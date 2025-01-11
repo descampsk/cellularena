@@ -153,7 +153,7 @@ export default defineComponent({
         console.log('Both players have submitted actions')
         this.state.turn++
 
-        updateDoc(this.gameRef, {
+        await updateDoc(this.gameRef, {
           turn: this.state.turn,
           waitingForActions: {
             [Owner.ONE]: true,
@@ -161,13 +161,13 @@ export default defineComponent({
           },
         })
 
-        this.handleActions(true)
+        await this.handleActions(true)
       } else if (this.playerId === Owner.TWO && waitingForPlayerOne && waitingForPlayerTwo) {
         console.log('Both players have submitted actions')
 
         this.state.turn = newGame.turn
 
-        this.handleActions(true)
+        await this.handleActions(true)
       }
     },
   },
@@ -196,7 +196,7 @@ export default defineComponent({
     removeActionFromRoot(root: number) {
       delete this.registredActionsPerRoot[root]
     },
-    processActions() {
+    async processActions() {
       const actions = Object.values(this.registredActionsPerRoot)
 
       for (const actionLine of actions) {
@@ -225,11 +225,11 @@ export default defineComponent({
           this.gameId,
           'actions',
         ).withConverter(actionFirestoreConvertor)
-        addDoc(collectionRef, action)
+        await addDoc(collectionRef, action)
 
         const waitingForActionsField = `waitingForActions.${this.playerId}`
 
-        updateDoc(this.gameRef, {
+        await updateDoc(this.gameRef, {
           [waitingForActionsField]: false,
         })
       }
