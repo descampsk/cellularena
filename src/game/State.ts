@@ -1,7 +1,7 @@
 import { getDirection } from './helpers'
 import { Direction, Entity, EntityType, Owner, ProteinTypes } from './Entity'
 import { type SimplePoint } from './Point'
-import { WaitAction, type GrowAction, type SporeAction } from './Actions'
+import { GrowAction, WaitAction, type SporeAction } from './Actions'
 
 export const StringToEntityType = {
   EMPTY: EntityType.EMPTY,
@@ -66,7 +66,7 @@ export const ProteinsPerOrgan: Record<OrganType, { A: 0 | 1; B: 0 | 1; C: 0 | 1;
 export type ProteinType = 'A' | 'B' | 'C' | 'D'
 
 export class State {
-  public turn = 0
+  public turn = 1
 
   public width = 0
 
@@ -123,21 +123,7 @@ export class State {
     return new Entity(point.x, point.y, EntityType.EMPTY, Owner.NONE, 0, Direction.X, 0, 0)
   }
 
-  public checkIfMapIsSparseProtein() {
-    const cProteinCount = this.entities.filter((e) => e.type === EntityType.C).length
-    const dProteinCount = this.entities.filter((e) => e.type === EntityType.D).length
-    const bProteinCount = this.entities.filter((e) => e.type === EntityType.B).length
-
-    if (cProteinCount <= 4 || dProteinCount <= 4 || bProteinCount <= 4) {
-      this.isSparseProtein = true
-    } else {
-      this.isSparseProtein = false
-    }
-  }
-
   public refreshState(inputs: string[]) {
-    this.turn++
-
     this.entities = []
 
     this.grid = new Array<Entity>(this.height * this.width).fill(
@@ -178,11 +164,9 @@ export class State {
     this.requiredActionsCount = parseInt(inputs.shift()!)
 
     this.refreshProteins()
-
-    this.checkIfMapIsSparseProtein()
   }
 
-  public canGrowHere(point: SimplePoint): boolean {
+  public canGrowHere(point: SimplePoint, owner: Owner): boolean {
     return [
       { x: point.x - 1, y: point.y },
       { x: point.x + 1, y: point.y },
@@ -193,6 +177,7 @@ export class State {
         !this.entities.some(
           (t) =>
             t.type === EntityType.TENTACLE &&
+            t.owner !== owner &&
             t.x === n.x &&
             t.y === n.y &&
             getDirection(t, point) === t.organDir,
@@ -272,6 +257,19 @@ export class State {
 
     const { direction, type, target, organId, playerId } = action
 
+    if (action instanceof GrowAction && type === EntityType.ROOT) {
+      throw new Error('Root can only be grown with SporeAction')
+    }
+
+    const proteinCost = ProteinsPerOrgan[type as OrganType]
+    const playerProteins = this.proteinsPerPlayer[playerId]
+    const hasEnoughProteins = (Object.keys(proteinCost) as ProteinType[]).every(
+      (protein) => playerProteins[protein] >= proteinCost[protein],
+    )
+    if (!hasEnoughProteins) {
+      throw new Error(`Player ${playerId} does not have enough proteins to grow a ${type}`)
+    }
+
     const parent = this.entities.find((o) => o.organId === organId)
     if (!parent) {
       throw new Error(`Cannot find parent organ with id ${organId}`)
@@ -285,14 +283,16 @@ export class State {
       this.nextOrganId, // Assuming the new entity has the next id
       direction,
       parent.organId,
-      parent.type === EntityType.ROOT ? parent.organId : parent.organRootId,
+      type === EntityType.ROOT ? this.nextOrganId : parent.organRootId,
     )
-    this.nextOrganId += 1
     const entityAtTarget = this.getEntityAt(target)
-    if (entityAtTarget.owner !== Owner.NONE) {
+    if (entityAtTarget.owner !== Owner.NONE && !entityAtTarget.oldEntity) {
       throw new Error(`Cannot grow on top of an existing entity at ${target.x}, ${target.y}`)
     }
 
+    this.nextOrganId += 1
+
+    newEntity.oldEntity = entityAtTarget
     this.entities = this.entities.filter((e) => e.x !== target.x || e.y !== target.y)
     this.entities.push(newEntity)
     this.grid[target.x + target.y * this.width] = newEntity
@@ -301,23 +301,99 @@ export class State {
       this.proteinsPerPlayer[playerId][protein as keyof typeof proteinsNeeded] -=
         proteinsNeeded[protein as keyof typeof proteinsNeeded]
     }
-    if (type === EntityType.HARVESTER) {
-      const [nx, ny] = DirectionToDxDy[direction]
-      const harvestEntity = this.getEntityAt({ x: target.x + nx, y: target.y + ny })
-      if (harvestEntity.isProtein) {
-        harvestEntity.isAlreadyHarvested = true
-        this.proteinGainsPerPlayer[playerId][type as ProteinType] += 1
-      }
-    }
   }
 
-  public updateStateFromActions() {
+  public doTentacleAttacks() {
+    const tentacles = this.entities.filter((entity) => entity.type === EntityType.TENTACLE)
+    const entitiesToDestroy: Entity[] = []
+    tentacles.forEach((tentacle) => {
+      const [dx, dy] = DirectionToDxDy[tentacle.organDir]
+      const target = this.getEntityAt({ x: tentacle.x + dx, y: tentacle.y + dy })
+      if (target.owner == Owner.NONE || target.owner == tentacle.owner) {
+        return
+      }
+      entitiesToDestroy.push(target)
+      const stack = [target]
+      const ownerEntities = this.entities.filter((o) => o.owner === target.owner)
+      while (stack.length > 0) {
+        const current = stack.pop()!
+        const newChildrens = ownerEntities.filter((o) => o.organParentId === current.organId)
+        entitiesToDestroy.push(...newChildrens)
+        stack.push(...newChildrens)
+      }
+    })
+
+    this.entities = this.entities.filter((e) => !entitiesToDestroy.includes(e))
+
+    entitiesToDestroy.forEach((entity) => {
+      this.grid[entity.x + entity.y * this.width] = new Entity(
+        entity.x,
+        entity.y,
+        EntityType.EMPTY,
+        Owner.NONE,
+        0,
+        Direction.X,
+        0,
+        0,
+      )
+    })
+  }
+
+  public refreshAfterActions() {
     this.refreshProteins()
+    this.doWallCollisions()
+    this.retrieveProteinsBonus()
+    this.doTentacleAttacks()
+  }
+
+  public retrieveProteinsBonus() {
+    this.entities.forEach((entity) => {
+      const oldEntity = entity.oldEntity
+      if (!oldEntity) return
+
+      if (!ProteinTypes.includes(oldEntity.type)) {
+        entity.oldEntity = null
+        return
+      }
+
+      entity.oldEntity = null
+      const playerId = entity.owner as Owner.ONE | Owner.TWO
+      this.proteinsPerPlayer[playerId][oldEntity.type as ProteinType] += 3
+    })
+  }
+
+  public doWallCollisions() {
+    const entitiesToBecomeWall = this.entities.filter((entity) => {
+      const oldEntity = entity.oldEntity
+      if (!oldEntity) return false
+
+      if ([EntityType.EMPTY].includes(oldEntity.type)) {
+        entity.oldEntity = null
+        return false
+      }
+
+      if (ProteinTypes.includes(oldEntity.type)) {
+        return false
+      }
+
+      entity.oldEntity = null
+      return true
+    })
+
+    console.log('entitiesToBecomeWall', entitiesToBecomeWall)
+
+    entitiesToBecomeWall.forEach((entity) => {
+      entity.type = EntityType.WALL
+      entity.owner = Owner.NONE
+      entity.organId = 0
+      entity.organDir = Direction.X
+      entity.organParentId = 0
+    })
   }
 
   public refreshProteins() {
     for (const protein of this.proteins) {
-      protein.isAlreadyHarvested = false
+      protein.harvestedBy.clear()
     }
 
     for (const type of ProteinTypes) {
@@ -334,19 +410,18 @@ export class State {
       const neighbours = this.getNeighbours(harvester)
       neighbours.forEach((n) => {
         const entity = this.getEntityAt(n)
-        if (!entity.isProtein || entity.isAlreadyHarvested) return
+        const playerId = harvester.owner as Owner.ONE | Owner.TWO
+
+        if (!entity.isProtein || entity.harvestedBy.has(playerId)) return
         const direction = getDirection(harvester, n)
         if (direction !== harvester.organDir) return
 
         const { type } = entity
-        entity.isAlreadyHarvested = true
-        const playerId = harvester.owner as Owner.ONE | Owner.TWO
+        entity.harvestedBy.add(playerId)
 
         this.proteinGainsPerPlayer[playerId][type as ProteinType]++
         this.proteinsPerPlayer[playerId][type as ProteinType]++
       })
     })
-
-    // this.debug("Proteins gains", this.myProteinsGains);
   }
 }

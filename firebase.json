@@ -1,8 +1,7 @@
 {
   "firestore": {
     "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json",
-    "database": "cellularena-europe-west1"
+    "indexes": "firestore.indexes.json"
   },
   "hosting": {
     "public": "dist",

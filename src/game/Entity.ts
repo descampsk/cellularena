@@ -48,13 +48,11 @@ export const getDxDyFromDirection = (direction: Direction): [number, number] => 
 export class Entity implements SimplePoint {
   public isProtein = false
 
-  public isAlreadyHarvested = false
-
-  public shouldBeJumped = false
+  public harvestedBy: Set<Owner> = new Set()
 
   public isTemporary = false
 
-  // public isHarvestable = true;
+  public oldEntity: Entity | null = null
 
   constructor(
     public x: number,

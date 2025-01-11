@@ -1,44 +1,60 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div>
-    <div id="proteinsDisplay">Proteins: A: 0, B: 0, C: 0, D: 0</div>
-    <div id="proteinsGainsDisplay">Proteins Gains: A: 0, B: 0, C: 0, D: 0</div>
-    <div id="infoDisplay">Hover over a cell to see its details</div>
-    <canvas ref="gameCanvas"></canvas>
-    <div id="statusIndicator" style="text-align: center; margin-top: 10px">
-      <span
-        id="statusIcon"
-        :style="{
-          display: 'inline-block',
-          width: '12px',
-          height: '12px',
-          borderRadius: '50%',
-          backgroundColor: isPaused ? 'red' : 'green',
-          marginRight: '5px',
-        }"
-      ></span>
-      <span id="statusText" style="font-size: 18px">{{ isPaused ? 'Paused' : 'Running' }}</span>
-    </div>
-    <div id="controls" style="text-align: center; margin-top: 10px">
-      <button @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>
-    </div>
-    <div class="action-input">
-      <textarea
-        v-model="actionText"
-        placeholder="Enter actions (one per line)&#10;Example: GROW 3 5 2 BASIC X"
-        rows="5"
-        cols="50"
-      ></textarea>
-      <button @click="processActions">Apply Actions</button>
+  <div class="game-layout">
+    <div class="game-area">
+      <div class="top-section">
+        <div v-if="game" class="players-container">
+          <div class="left-player">
+            <PlayerInfo
+              :state="state"
+              :playerId="Owner.ONE"
+              :isActive="playerId === Owner.ONE"
+              :game="game"
+            />
+          </div>
+          <div class="share-button-container">
+            <button v-if="game" @click="copyShareLink" class="share-button">
+              {{ copyStatus }}
+            </button>
+          </div>
+          <div class="right-player">
+            <PlayerInfo
+              :state="state"
+              :playerId="Owner.TWO"
+              :isActive="playerId === Owner.TWO"
+              :game="game"
+            />
+          </div>
+        </div>
+        <div id="infoDisplay" class="info-display">Hover over a cell to see its details</div>
+      </div>
+
+      <div class="main-section">
+        <div class="actions-panel">
+          <ActionInputTable
+            :actions="registredActionsPerRoot"
+            :removeAction="removeActionFromRoot"
+            :processActions="processActions"
+            :canSubmitActions="canSubmitActions"
+          />
+        </div>
+        <div class="canvas-wrapper">
+          <GameCanvas
+            :state="state"
+            :playerId="playerId"
+            :registredActionsPerRoot="registredActionsPerRoot"
+            :addActionToRoot="addActionToRoot"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { Direction, EntityType, Owner } from '@/game/Entity'
-import { OrganTypes, State, type OrganType } from '@/game/State'
-import { createImage } from '@/utils/imageLoader'
+import { Direction, Owner } from '@/game/Entity'
+import { State, type OrganType } from '@/game/State'
 import {
   type Action,
   actionFirestoreConvertor,
@@ -46,7 +62,7 @@ import {
   SporeAction,
   WaitAction,
 } from '@/game/Actions'
-import { useCollection, useDocument, useFirestore } from 'vuefire'
+import { useDocument, useFirestore } from 'vuefire'
 import {
   addDoc,
   collection,
@@ -58,18 +74,16 @@ import {
 } from 'firebase/firestore'
 import { firebaseApp } from '@/infra/firebase'
 import { Game, gameFirestoreConvertor } from '@/game/Game'
-
-const CELL_SIZE = 48
-
-const directionToRotation: Record<Direction, number> = {
-  [Direction.E]: 0,
-  [Direction.N]: -Math.PI / 2,
-  [Direction.W]: Math.PI,
-  [Direction.S]: Math.PI / 2,
-  [Direction.X]: 0,
-}
+import PlayerInfo from '@/components/PlayerInfo.vue'
+import ActionInputTable from '@/components/ActionInputTable.vue'
+import GameCanvas from '@/components/GameCanvas.vue'
 
 export default defineComponent({
+  components: {
+    PlayerInfo,
+    ActionInputTable,
+    GameCanvas,
+  },
   data() {
     const db = getFirestore(firebaseApp)
     const gameId = this.$route.params.gameId as string
@@ -78,39 +92,36 @@ export default defineComponent({
     const gameRef = doc(db, 'games', gameId).withConverter(gameFirestoreConvertor)
     const game = useDocument<Game>(gameRef)
 
-    const playerId = game.data.value?.playerIds[playerUuid] ?? Owner.ONE
-    console.log(game.data.value, gameId)
-    console.log(playerId, playerUuid)
-
     const actionsRef = collection(db, 'games', gameId, 'actions').withConverter(
       actionFirestoreConvertor,
     )
-    const actions = useCollection<GrowAction | SporeAction | WaitAction>(actionsRef)
-
     return {
       initialized: false,
-      mapName: '-109498249532328380',
       gameRef,
       game,
       gameId: this.$route.params.gameId as string,
+      actionsRef,
       playerUuid,
       playerId: Owner.ONE as Owner.ONE | Owner.TWO,
       state: new State(),
       isPaused: true,
-      canvas: null as HTMLCanvasElement | null,
-      ctx: null as CanvasRenderingContext2D | null,
-      myImages: {} as Record<EntityType, HTMLImageElement>,
-      oppImages: {} as Record<EntityType, HTMLImageElement>,
       actionText: '',
-      lastProcessedActionId: null as string | null,
-      actions,
-      previousActions: [...actions.data.value],
+      registredActionsPerRoot: {} as Record<number, string>,
+      Owner, // Add Owner enum to template
+      copyStatus: 'Share Link',
     }
   },
+  computed: {
+    canSubmitActions(): boolean {
+      if (!this.game) return false
+      return this.game.waitingForActions[this.playerId]
+    },
+    waitingMessage(): string {
+      const waitingPlayer = this.playerId === Owner.ONE ? 'Player Two' : 'Player One'
+      return `Waiting for ${waitingPlayer} to play...`
+    },
+  },
   async mounted() {
-    this.canvas = this.$refs.gameCanvas as HTMLCanvasElement
-    this.ctx = this.canvas.getContext('2d')
-
     const db = useFirestore()
 
     const gameDoc = await getDoc(
@@ -120,148 +131,51 @@ export default defineComponent({
       throw new Error('The game does not exists')
     }
 
-    this.playerId = gameDoc.data().playerIds[this.playerUuid]
+    const game = gameDoc.data()
 
-    await this.loadImages()
-    await this.initializeGame()
+    this.state.turn = game.turn
 
-    this.setupMouseEvents()
-    this.drawGrid()
-    this.updateProteinsDisplay()
+    this.playerId = game.playerIds[this.playerUuid]
 
-    const actionCollection = collection(db, 'games', this.gameId, 'actions').withConverter(
-      actionFirestoreConvertor,
-    )
-    const actionDocs = await getDocs(actionCollection)
-    const actions = actionDocs.docs.map((d) => d.data())
-    this.handleNewActions(actions)
-    this.previousActions = actions
+    await this.initializeGame(game.seed)
+
+    this.handleActions(false)
 
     this.initialized = true
   },
   watch: {
-    game: function (newGame: Game) {
+    game: async function (newGame: Game) {
       console.log('Game changed', newGame)
-      if (this.playerId !== Owner.ONE) return
-    },
-    actions: {
-      deep: true,
-      immediate: false,
-      handler(newActions: Action[]) {
-        if (!this.initialized) return
+      const waitingForPlayerOne = newGame.waitingForActions[Owner.ONE]
+      const waitingForPlayerTwo = newGame.waitingForActions[Owner.TWO]
 
-        const actionsNotProcessed = newActions
-          .filter((action) => this.previousActions.findIndex((a) => a.id === action.id) === -1)
-          .sort((a, b) => a.turn - b.turn)
-        console.log(newActions, this.previousActions, actionsNotProcessed)
-        this.previousActions = [...this.actions]
+      if (this.playerId === Owner.ONE && !waitingForPlayerOne && !waitingForPlayerTwo) {
+        console.log('Both players have submitted actions')
+        this.state.turn++
 
-        this.handleNewActions(actionsNotProcessed)
-      },
+        updateDoc(this.gameRef, {
+          turn: this.state.turn,
+          waitingForActions: {
+            [Owner.ONE]: true,
+            [Owner.TWO]: true,
+          },
+        })
+
+        this.handleActions(true)
+      } else if (this.playerId === Owner.TWO && waitingForPlayerOne && waitingForPlayerTwo) {
+        console.log('Both players have submitted actions')
+
+        this.state.turn = newGame.turn
+
+        this.handleActions(true)
+      }
     },
   },
   methods: {
-    async initializeGame() {
-      const inputs = await this.loadMap(this.mapName)
+    async initializeGame(seed: string) {
+      const inputs = await this.loadMap(seed)
       this.state.setMapSize(inputs.shift()!)
       this.state.refreshState(inputs)
-      this.state.refreshProteins()
-
-      if (this.canvas) {
-        this.canvas.width = this.state.width * CELL_SIZE
-        this.canvas.height = this.state.height * CELL_SIZE
-      }
-    },
-    drawGrid() {
-      if (!this.ctx || !this.canvas) return
-
-      const ctx = this.ctx
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
-
-      // Draw base grid
-      for (let row = 0; row < this.state.height; row++) {
-        for (let col = 0; col < this.state.width; col++) {
-          const x = col * CELL_SIZE
-          const y = row * CELL_SIZE
-          const cell = this.state.getEntityAt({ x: col, y: row }).type
-
-          // Draw cell background
-          ctx.fillStyle = cell === EntityType.WALL ? '#808080' : 'white'
-          ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
-
-          // Draw cell border
-          ctx.strokeStyle = 'black'
-          ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE)
-        }
-      }
-
-      // Draw entities
-      for (const entity of this.state.entities) {
-        const x = entity.x * CELL_SIZE
-        const y = entity.y * CELL_SIZE
-        const img =
-          entity.owner === Owner.ONE ? this.myImages[entity.type] : this.oppImages[entity.type]
-        const rotation = directionToRotation[entity.organDir]
-
-        if (img) {
-          ctx.save()
-          ctx.translate(x + CELL_SIZE / 2, y + CELL_SIZE / 2)
-          if (rotation !== 0) {
-            ctx.rotate(rotation)
-          }
-          ctx.drawImage(img, -CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE)
-          ctx.restore()
-        }
-      }
-    },
-    updateProteinsDisplay(): void {
-      const { proteinsPerPlayer, proteinGainsPerPlayer } = this.state
-      const proteinsDisplay = document.getElementById('proteinsDisplay')
-      const proteinsForPlayer = proteinsPerPlayer[this.playerId]
-      if (proteinsDisplay) {
-        proteinsDisplay.textContent = `Proteins: A: ${proteinsForPlayer.A}, B: ${proteinsForPlayer.B}, C: ${proteinsForPlayer.C}, D: ${proteinsForPlayer.D}`
-      }
-
-      const proteinsGainsDisplay = document.getElementById('proteinsGainsDisplay')
-      const proteinGainsForPlayer = proteinGainsPerPlayer[this.playerId]
-      if (proteinsGainsDisplay) {
-        proteinsGainsDisplay.textContent = `Proteins: A: ${proteinGainsForPlayer.A}, B: ${proteinGainsForPlayer.B}, C: ${proteinGainsForPlayer.C}, D: ${proteinGainsForPlayer.D}`
-      }
-    },
-    setupMouseEvents() {
-      if (!this.canvas) return
-
-      this.canvas.addEventListener('mousemove', (event) => {
-        const rect = this.canvas!.getBoundingClientRect()
-        const mouseX = event.clientX - rect.left
-        const mouseY = event.clientY - rect.top
-
-        const col = Math.floor(mouseX / CELL_SIZE)
-        const row = Math.floor(mouseY / CELL_SIZE)
-
-        if (col >= 0 && col < this.state.width && row >= 0 && row < this.state.height) {
-          const entity = this.state.entities.find((e) => e.x === col && e.y === row)
-          const info = entity
-            ? JSON.stringify({
-                x: entity.x,
-                y: entity.y,
-                type: entity.type,
-                owner: entity.owner,
-                organId: entity.organId,
-                organRootId: entity.organRootId,
-                organDir: entity.organDir,
-              })
-            : `${col},${row}`
-
-          const infoDisplay = document.getElementById('infoDisplay')
-          if (infoDisplay) {
-            infoDisplay.textContent = info
-          }
-        }
-      })
-    },
-    togglePause() {
-      this.isPaused = !this.isPaused
     },
     async loadMap(mapName: string) {
       try {
@@ -279,53 +193,27 @@ export default defineComponent({
         throw error
       }
     },
-    async loadImages() {
-      const imageUrls: Record<EntityType, string> = {
-        EMPTY: 'wall.png',
-        WALL: 'wall.png',
-        ROOT: '0_root.png',
-        BASIC: '0_basic.png',
-        HARVESTER: '0_harvester.png',
-        TENTACLE: '0_tentacle.png',
-        SPORER: '0_sporer.png',
-        A: 'a.png',
-        B: 'b.png',
-        C: 'c.png',
-        D: 'd.png',
-      }
-
-      // Load my images
-      for (const [key, url] of Object.entries(imageUrls)) {
-        this.myImages[key as unknown as EntityType] = await createImage(url)
-      }
-
-      // Load opponent images
-      const oppImageUrls = { ...imageUrls }
-      for (const type of OrganTypes) {
-        oppImageUrls[type] = oppImageUrls[type].replace('0_', '1_')
-      }
-
-      for (const [key, url] of Object.entries(oppImageUrls)) {
-        this.oppImages[key as unknown as EntityType] = await createImage(url)
-      }
+    removeActionFromRoot(root: number) {
+      delete this.registredActionsPerRoot[root]
     },
     processActions() {
-      const actions = this.actionText.split('\n').filter((line) => line.trim())
+      const actions = Object.values(this.registredActionsPerRoot)
 
       for (const actionLine of actions) {
-        const [actionType, organId, x, y, type, direction] = actionLine.split(' ')
+        const [actionType, parentOrganId, x, y, type, direction] = actionLine.split(' ')
         let action: Action = new WaitAction(this.playerId, this.state.turn)
         if (actionType === 'GROW') {
           action = new GrowAction(
             this.playerId,
             this.state.turn,
-            Number(organId),
+            Number(parentOrganId),
             { x: Number(x), y: Number(y) },
             type as OrganType,
             direction as Direction,
           )
-        } else if (actionType === 'SPORE') {
-          action = new SporeAction(this.playerId, this.state.turn, Number(organId), {
+        }
+        if (actionType === 'SPORE') {
+          action = new SporeAction(this.playerId, this.state.turn, Number(parentOrganId), {
             x: Number(x),
             y: Number(y),
           })
@@ -346,19 +234,55 @@ export default defineComponent({
         })
       }
     },
-    handleNewActions(actions: Action[]) {
-      for (const action of actions) {
-        console.log('Processing action:', action)
-        try {
-          this.state.applyAction(action)
-          this.state.updateStateFromActions()
-          this.updateProteinsDisplay()
-          this.drawGrid()
-          this.state.turn = action.turn + 1
-          this.lastProcessedActionId = action.id
-        } catch (error) {
-          console.error(`Error processing action:`, error)
+    async handleActions(onlyNew = true) {
+      const actionDocs = await getDocs(this.actionsRef)
+      const newActions = actionDocs.docs
+        .map((d) => d.data())
+        .filter((a) => !onlyNew || a.turn === this.state.turn - 1)
+        .sort((a, b) => {
+          const aTurn = a.turn
+          const bTurn = b.turn
+          if (aTurn != bTurn) return aTurn - bTurn
+
+          return a.playerId - b.playerId
+        })
+      const maxTurn = newActions.length > 0 ? newActions[newActions.length - 1].turn : 0
+
+      for (let turn = onlyNew ? maxTurn : 1; turn <= maxTurn; turn++) {
+        const actions = newActions.filter((a) => a.turn === turn)
+        for (const action of actions) {
+          console.log('Processing action:', action)
+          try {
+            this.state.applyAction(action)
+          } catch (error) {
+            console.error(`Error processing action:`, error)
+          }
         }
+        this.state.refreshAfterActions()
+      }
+      this.registredActionsPerRoot = {}
+    },
+    addActionToRoot(action: string, rootId: number) {
+      this.registredActionsPerRoot[rootId] = action
+    },
+    async copyShareLink() {
+      if (!this.game) return
+
+      const oppositePlayerId = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
+      const oppositePlayerUuid = Object.keys(this.game.playerIds).find(
+        (uuid) => this.game?.playerIds[uuid] === oppositePlayerId,
+      )
+      const url = `${import.meta.env.VITE_CELLULARENA_URL}/game/${this.gameId}/player/${oppositePlayerUuid}`
+
+      try {
+        await navigator.clipboard.writeText(url)
+        this.copyStatus = 'Copied!'
+        setTimeout(() => {
+          this.copyStatus = 'Share Link'
+        }, 2000)
+      } catch (err) {
+        console.error('Failed to copy:', err)
+        this.copyStatus = 'Failed to copy'
       }
     },
   },
@@ -366,38 +290,192 @@ export default defineComponent({
 </script>
 
 <style>
+/* Add these global styles at the top */
+:root {
+  background-color: white;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: white;
+}
+
+.players-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Ajoute un alignement vertical */
+  margin: 0 auto 20px;
+  max-width: 1000px; /* Augmente la largeur pour mieux espacer */
+  position: relative;
+}
+
+.player-info {
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #ffffff; /* Blanc pour un meilleur contraste */
+  color: #333; /* Texte plus sombre */
+  min-width: 200px;
+  text-align: center; /* Centre le contenu */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Ajoute un effet d'ombre */
+}
+
+.game-container {
+  display: flex;
+  justify-content: center; /* Centrer tout le contenu horizontalement */
+  align-items: flex-start;
+  gap: 20px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.actions-panel {
+  flex: 0 0 300px; /* Largeur fixe pour le panneau d'actions */
+  margin-left: 0px;
+}
+
+.canvas-container {
+  flex: 1; /* Le canvas prend l'espace restant */
+  display: flex;
+  justify-content: center; /* Centrer le canvas horizontalement */
+  position: relative;
+}
+
 #gameCanvas {
   border: 1px solid black;
   display: block;
-  margin: 20px auto;
+  margin: 0 auto;
 }
-#proteinsDisplay {
-  text-align: center;
-  font-family: Arial, sans-serif;
-  margin-bottom: 10px;
-  font-size: 16px;
-}
-#proteinsGainsDisplay {
-  text-align: center;
-  font-family: Arial, sans-serif;
-  margin-bottom: 10px;
-  font-size: 16px;
-}
+
 #infoDisplay {
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 30px;
   font-family: Arial, sans-serif;
   font-size: 14px;
   color: #333;
 }
-.action-input {
-  margin: 20px auto;
+
+.waiting-message {
   text-align: center;
+  margin: 20px auto;
+  padding: 15px;
+  font-size: 18px;
+  color: #666;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  max-width: 400px;
 }
-.action-input textarea {
+
+.game-layout {
+  background-color: white;
+  min-height: 100vh;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.info-section {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.players-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto 30px; /* Added bottom margin */
+  position: relative;
+}
+
+.left-player,
+.right-player {
+  flex: 0 0 300px;
+}
+
+.info-display {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+}
+
+.main-section {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: start;
+  -ms-flex-align: start;
+  align-items: flex-start;
+  gap: 20px;
+  -webkit-box-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
+}
+
+.actions-panel {
+  position: sticky;
+  top: 20px;
+  width: 300px;
+  align-self: flex-start;
+}
+
+.canvas-wrapper {
+  flex: 0 1 auto;
+  position: relative;
+}
+
+#gameCanvas {
   display: block;
-  margin: 10px auto;
-  padding: 10px;
-  font-family: monospace;
+  margin: 0;
+}
+
+.share-button-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-button {
+  padding: 8px 16px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  white-space: nowrap;
+}
+
+.share-button:hover {
+  background-color: #45a049;
+}
+
+.top-section {
+  margin-bottom: 50px; /* Increased from 20px */
+}
+
+.game-area {
+  background-color: white;
 }
 </style>

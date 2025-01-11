@@ -1,5 +1,3 @@
-import './assets/main.css'
-
 import { VueFire, VueFireAuth } from 'vuefire'
 import { firebaseApp } from './infra/firebase'
 
