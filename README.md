@@ -1,29 +1,37 @@
 # Cellularena
 
-This template should help get you started developing with Vue 3 in Vite.
+Cellularena is an amazing Bot Contest created by Codingame : https://www.codingame.com/contests/winter-challenge-2024
 
-## Recommended IDE Setup
+This project has to goal to make an online two player version of the game.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
+It uses VueJS, Firebase Hosting and Firestore.
 
 ## Project Setup
 
+Easiest way to use this repository is to launch it with the devcontainer included.
+
+If not, you should install:
+
+- Node LTS (22)
+- Firebase CLI
+- Java LTS
+
 ```sh
-npm install
+$ npm install
 ```
 
 ### Compile and Hot-Reload for Development
 
+In a first terminal
+
 ```sh
-npm run dev
+$ firebase emulators:start
+```
+
+In a second
+
+```sh
+$ npm run dev
 ```
 
 ### Type-Check, Compile and Minify for Production
@@ -43,3 +51,7 @@ npm run test:unit
 ```sh
 npm run lint
 ```
+
+## Contributions
+
+Contributions are welcomed. Feel free to fork the repository and to open a PR :)
