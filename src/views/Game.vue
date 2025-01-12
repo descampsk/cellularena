@@ -20,8 +20,11 @@
               :game="game"
             />
           </div>
-          <div class="share-button-container">
-            <button v-if="game" @click="copyShareLink" class="share-button">
+          <div v-if="game" class="share-button-container">
+            <button v-if="game.soloMode" @click="changePlayerId" class="share-button">
+              Change Player
+            </button>
+            <button v-else @click="copyShareLink" class="share-button">
               {{ copyStatus }}
             </button>
           </div>
@@ -155,7 +158,11 @@ export default defineComponent({
       const waitingForPlayerOne = newGame.waitingForActions[Owner.ONE]
       const waitingForPlayerTwo = newGame.waitingForActions[Owner.TWO]
 
-      if (this.playerId === Owner.ONE && !waitingForPlayerOne && !waitingForPlayerTwo) {
+      if (
+        (this.playerId === Owner.ONE || newGame.soloMode) &&
+        !waitingForPlayerOne &&
+        !waitingForPlayerTwo
+      ) {
         console.log('Both players have submitted actions')
         this.state.turn++
 
@@ -209,7 +216,9 @@ export default defineComponent({
     },
     async processActions() {
       logEvent(firebaseAnalytics, 'apply_actions')
-      const actions = Object.values(this.registredActionsPerRoot)
+      const actions = Object.values(this.registredActionsPerRoot).filter(
+        (a) => a.playerId === this.playerId,
+      )
 
       for (const action of actions) {
         const collectionRef = collection(
@@ -263,6 +272,9 @@ export default defineComponent({
     },
     addActionToRoot(action: GrowAction | SporeAction, rootId: number) {
       this.registredActionsPerRoot[rootId] = action
+    },
+    changePlayerId() {
+      this.playerId = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
     },
     async copyShareLink() {
       if (!this.game) return

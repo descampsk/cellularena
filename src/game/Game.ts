@@ -7,6 +7,8 @@ export class Game {
 
   public seed: string
 
+  public soloMode = false
+
   public playerIds: Record<string, Owner.ONE | Owner.TWO> = {
     [v4()]: Owner.ONE,
     [v4()]: Owner.TWO,
@@ -32,13 +34,14 @@ export class Game {
 
   constructor(game: Partial<Game>) {
     this.seed = v4()
-    const { connectedPlayers, playerIds, seed, turn, waitingForActions, id } = game
+    const { connectedPlayers, playerIds, seed, turn, waitingForActions, id, soloMode } = game
     if (id) this.id = id
     if (connectedPlayers) this.connectedPlayers = connectedPlayers
     if (playerIds) this.playerIds = playerIds
     if (seed) this.seed = seed
     if (turn) this.turn = turn
     if (waitingForActions) this.waitingForActions = waitingForActions
+    if (soloMode) this.soloMode = soloMode
   }
 }
 

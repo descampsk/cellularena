@@ -103,6 +103,7 @@ export default defineComponent({
       handler: 'drawGrid',
       deep: true,
     },
+    playerId: 'drawGrid',
   },
   methods: {
     async loadImages() {
@@ -224,27 +225,29 @@ export default defineComponent({
     },
 
     drawRegisteredActions() {
-      Object.values(this.registredActionsPerRoot).forEach((action) => {
-        const {
-          actionType,
-          target: { x, y },
-          type,
-          direction,
-        } = action
-        const organType = (actionType === 'GROW' ? type : 'ROOT') as EntityType
-        const entity = new Entity(
-          Number(x),
-          Number(y),
-          organType,
-          this.playerId,
-          -1,
-          direction as Direction,
-          -1,
-          -1,
-        )
-        console.log(entity)
-        this.drawEntity(entity, 0.5)
-      })
+      Object.values(this.registredActionsPerRoot)
+        .filter((a) => a.playerId === this.playerId)
+        .forEach((action) => {
+          const {
+            actionType,
+            target: { x, y },
+            type,
+            direction,
+          } = action
+          const organType = (actionType === 'GROW' ? type : 'ROOT') as EntityType
+          const entity = new Entity(
+            Number(x),
+            Number(y),
+            organType,
+            this.playerId,
+            -1,
+            direction as Direction,
+            -1,
+            -1,
+          )
+          console.log(entity)
+          this.drawEntity(entity, 0.5)
+        })
     },
 
     getGrowableCells(root: Entity): Array<{ x: number; y: number }> {
