@@ -14,6 +14,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { useFirestore } from 'vuefire'
 import { Game, gameFirestoreConvertor } from '@/game/Game'
 import { Owner } from '@/game/Entity'
+import { logEvent } from 'firebase/analytics'
+import { firebaseAnalytics } from '@/infra/firebase'
 
 const seeds = [
   '-109498249532328380',
@@ -65,6 +67,7 @@ export default {
           [playerTwoUuid]: Owner.TWO,
         },
       })
+      logEvent(firebaseAnalytics, 'create_game')
       const gameDoc = doc(db, 'games', game.id).withConverter(gameFirestoreConvertor)
       setDoc(gameDoc, game)
       this.$router.push(`/game/${game.id}/player/${playerOneUuid}`)

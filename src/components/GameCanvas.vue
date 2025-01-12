@@ -26,6 +26,8 @@ import { defineComponent, type PropType } from 'vue'
 import ActionSelectionPopup from './ActionSelectionPopup.vue'
 import { Game } from '@/game/Game'
 import { GrowAction, SporeAction } from '@/game/Actions'
+import { logEvent } from 'firebase/analytics'
+import { firebaseAnalytics } from '@/infra/firebase'
 
 const directionToRotation: Record<Direction, number> = {
   [Direction.E]: 0,
@@ -335,6 +337,7 @@ export default defineComponent({
     },
 
     handleCanvasClick(event: MouseEvent) {
+      logEvent(firebaseAnalytics, 'click_canvas')
       const { waitingForActions } = this.game
       if (!waitingForActions[this.playerId as 0 | 1]) {
         return

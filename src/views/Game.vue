@@ -72,10 +72,11 @@ import {
   getFirestore,
   updateDoc,
 } from 'firebase/firestore'
-import { firebaseApp } from '@/infra/firebase'
+import { firebaseAnalytics, firebaseApp } from '@/infra/firebase'
 import { Game, gameFirestoreConvertor } from '@/game/Game'
 import PlayerInfo from '@/components/PlayerInfo.vue'
 import GameCanvas from '@/components/GameCanvas.vue'
+import { logEvent } from 'firebase/analytics'
 
 export default defineComponent({
   components: {
@@ -207,6 +208,7 @@ export default defineComponent({
       delete this.registredActionsPerRoot[root]
     },
     async processActions() {
+      logEvent(firebaseAnalytics, 'apply_actions')
       const actions = Object.values(this.registredActionsPerRoot)
 
       for (const action of actions) {
@@ -526,7 +528,7 @@ button:disabled {
 }
 
 /* Optional: Force landscape mode using CSS */
-@media screen and (orientation: portrait) {
+/* @media screen and (orientation: portrait) {
   .game-layout {
     transform: rotate(90deg);
     transform-origin: left top;
@@ -536,5 +538,5 @@ button:disabled {
     top: 100%;
     left: 0;
   }
-}
+} */
 </style>
