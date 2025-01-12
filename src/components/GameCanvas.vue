@@ -391,7 +391,8 @@ export default defineComponent({
 
       const action = `GROW ${parent.organId} ${this.popupX} ${this.popupY} ${organ} ${direction}`
 
-      this.addActionToRoot(action, parent.organRootId)
+      const rootId = parent.type === EntityType.ROOT ? parent.organId : parent.organRootId
+      this.addActionToRoot(action, rootId)
     },
   },
 })
