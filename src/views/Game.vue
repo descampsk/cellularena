@@ -29,23 +29,21 @@
         <div id="infoDisplay" class="info-display">Hover over a cell to see its details</div>
       </div>
 
-      <div class="main-section">
-        <div class="actions-panel">
-          <ActionInputTable
-            :actions="registredActionsPerRoot"
-            :removeAction="removeActionFromRoot"
-            :processActions="processActions"
-            :canSubmitActions="canSubmitActions"
-          />
-        </div>
+      <div v-if="game" class="main-section">
         <div class="canvas-wrapper">
           <GameCanvas
             :state="state"
+            :game="game"
             :playerId="playerId"
             :registredActionsPerRoot="registredActionsPerRoot"
             :addActionToRoot="addActionToRoot"
+            :removeActionFromRoot="removeActionFromRoot"
           />
         </div>
+      </div>
+      <div class="action-buttons">
+        <button v-if="canSubmitActions" @click="processActions">Apply Actions</button>
+        <button v-else disabled>Waiting for the other player</button>
       </div>
     </div>
   </div>
@@ -75,13 +73,11 @@ import {
 import { firebaseApp } from '@/infra/firebase'
 import { Game, gameFirestoreConvertor } from '@/game/Game'
 import PlayerInfo from '@/components/PlayerInfo.vue'
-import ActionInputTable from '@/components/ActionInputTable.vue'
 import GameCanvas from '@/components/GameCanvas.vue'
 
 export default defineComponent({
   components: {
     PlayerInfo,
-    ActionInputTable,
     GameCanvas,
   },
   data() {
@@ -242,14 +238,21 @@ export default defineComponent({
       const actionDocs = await getDocs(this.actionsRef)
       const newActions = actionDocs.docs
         .map((d) => d.data())
-        .filter((a) => !onlyNew || a.turn === this.state.turn - 1)
-        .sort((a, b) => {
-          const aTurn = a.turn
-          const bTurn = b.turn
-          if (aTurn != bTurn) return aTurn - bTurn
+        .filter(
+          (a) => !(a instanceof WaitAction) && (!onlyNew || a.turn === this.state.turn - 1),
+        ) as (GrowAction | SporeAction)[]
 
-          return a.playerId - b.playerId
-        })
+      newActions.sort((a, b) => {
+        const aTurn = a.turn
+        const bTurn = b.turn
+        if (aTurn != bTurn) return aTurn - bTurn
+
+        if (a.playerId !== b.playerId) return a.playerId - b.playerId
+
+        if (a.organId !== b.organId) return a.organId - b.organId
+
+        return a.id.localeCompare(b.id)
+      })
       const maxTurn = newActions.length > 0 ? newActions[newActions.length - 1].turn : 0
 
       for (let turn = onlyNew ? maxTurn : 1; turn <= maxTurn; turn++) {
@@ -437,13 +440,6 @@ body {
   flex: 1;
 }
 
-.actions-panel {
-  position: sticky;
-  top: 20px;
-  width: 300px;
-  align-self: flex-start;
-}
-
 .canvas-wrapper {
   flex: 0 1 auto;
   position: relative;
@@ -481,5 +477,25 @@ body {
 
 .game-area {
   background-color: white;
+}
+
+.action-buttons {
+  text-align: center;
+}
+
+button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  cursor: pointer;
+  -webkit-transition: background-color 0.3s;
+  transition: background-color 0.3s;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 </style>

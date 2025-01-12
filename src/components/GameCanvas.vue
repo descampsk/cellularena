@@ -24,6 +24,7 @@ import { OrganTypes, State, type OrganType } from '@/game/State'
 import { createImage } from '@/utils/imageLoader'
 import { defineComponent, type PropType } from 'vue'
 import ActionSelectionPopup from './ActionSelectionPopup.vue'
+import { Game } from '@/game/Game'
 
 const directionToRotation: Record<Direction, number> = {
   [Direction.E]: 0,
@@ -44,6 +45,10 @@ export default defineComponent({
       type: State,
       required: true,
     },
+    game: {
+      type: Game,
+      required: true,
+    },
     playerId: {
       type: Number,
       required: true,
@@ -54,6 +59,10 @@ export default defineComponent({
     },
     addActionToRoot: {
       type: Function as PropType<(action: string, rootId: number) => void>,
+      required: true,
+    },
+    removeActionFromRoot: {
+      type: Function as PropType<(rootId: number) => void>,
       required: true,
     },
   },
@@ -67,11 +76,16 @@ export default defineComponent({
       popupX: 0,
       popupY: 0,
       selectedRoot: null as Entity | null,
+      backgroundImage: null as HTMLImageElement | null,
     }
   },
   async mounted() {
     this.canvas = this.$refs.gameCanvas as HTMLCanvasElement
     this.ctx = this.canvas.getContext('2d')
+
+    // Load background image
+    this.backgroundImage = await createImage('background.jpg')
+
     await this.loadImages()
     this.drawGrid()
     this.setupMouseEvents()
@@ -81,6 +95,10 @@ export default defineComponent({
       handler: 'drawGrid',
       deep: true,
       immediate: true,
+    },
+    registredActionsPerRoot: {
+      handler: 'drawGrid',
+      deep: true,
     },
   },
   methods: {
@@ -123,16 +141,18 @@ export default defineComponent({
       const ctx = this.ctx
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
+      // Draw background image
+      if (this.backgroundImage) {
+        ctx.globalAlpha = 1.0 // Adjust opacity if needed
+        ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height)
+        ctx.globalAlpha = 1.0
+      }
+
       // Draw base grid
       for (let row = 0; row < this.state.height; row++) {
         for (let col = 0; col < this.state.width; col++) {
           const x = col * CELL_SIZE
           const y = row * CELL_SIZE
-          const cell = this.state.getEntityAt({ x: col, y: row }).type
-
-          // Draw cell background
-          ctx.fillStyle = cell === EntityType.WALL ? '#808080' : 'white'
-          ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
 
           // Draw cell border
           ctx.strokeStyle = 'black'
@@ -145,21 +165,29 @@ export default defineComponent({
 
       // Draw entities
       for (const entity of this.state.entities) {
-        const x = entity.x * CELL_SIZE
-        const y = entity.y * CELL_SIZE
-        const img =
-          entity.owner === Owner.ONE ? this.myImages[entity.type] : this.oppImages[entity.type]
-        const rotation = directionToRotation[entity.organDir]
+        this.drawEntity(entity)
+      }
 
-        if (img) {
-          ctx.save()
-          ctx.translate(x + CELL_SIZE / 2, y + CELL_SIZE / 2)
-          if (rotation !== 0) {
-            ctx.rotate(rotation)
-          }
-          ctx.drawImage(img, -CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE)
-          ctx.restore()
+      this.drawRegisteredActions()
+    },
+    drawEntity(entity: Entity, opacity = 1.0) {
+      if (!this.ctx) return
+
+      const x = entity.x * CELL_SIZE
+      const y = entity.y * CELL_SIZE
+      const img =
+        entity.owner === Owner.ONE ? this.myImages[entity.type] : this.oppImages[entity.type]
+      const rotation = directionToRotation[entity.organDir]
+
+      if (img) {
+        this.ctx.save()
+        this.ctx.globalAlpha = opacity // Adjust opacity if needed
+        this.ctx.translate(x + CELL_SIZE / 2, y + CELL_SIZE / 2)
+        if (rotation !== 0) {
+          this.ctx.rotate(rotation)
         }
+        this.ctx.drawImage(img, -CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE)
+        this.ctx.restore()
       }
     },
     drawClickableCells() {
@@ -175,7 +203,7 @@ export default defineComponent({
               !this.registredActionsPerRoot[e.organId],
           )
           .forEach((root) => {
-            this.drawHighlight(root.x, root.y, 'rgba(0, 255, 0, 0.2)')
+            this.drawHighlight(root.x, root.y, 'rgba(0, 255, 0, 0.6)')
           })
       } else {
         // Highlight cells where the player can grow from selected root
@@ -190,6 +218,26 @@ export default defineComponent({
       if (!this.ctx) return
       this.ctx.fillStyle = color
       this.ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+    },
+
+    drawRegisteredActions() {
+      Object.values(this.registredActionsPerRoot).forEach((action) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const [actionType, _parentOrganId, x, y, type, direction] = action.split(' ')
+        const organType = (actionType === 'GROW' ? type : 'ROOT') as EntityType
+        const entity = new Entity(
+          Number(x),
+          Number(y),
+          organType,
+          this.playerId,
+          -1,
+          direction as Direction,
+          -1,
+          -1,
+        )
+        console.log(entity)
+        this.drawEntity(entity, 0.5)
+      })
     },
 
     getGrowableCells(root: Entity): Array<{ x: number; y: number }> {
@@ -244,7 +292,7 @@ export default defineComponent({
         }
       })
 
-      return cells
+      return cells.filter((c, idx) => cells.findIndex((c1) => c1.x === c.x && c1.y === c.y) === idx)
     },
 
     setupMouseEvents() {
@@ -282,6 +330,11 @@ export default defineComponent({
     },
 
     handleCanvasClick(event: MouseEvent) {
+      const { waitingForActions } = this.game
+      if (!waitingForActions[this.playerId as 0 | 1]) {
+        return
+      }
+
       const rect = this.canvas!.getBoundingClientRect()
       const mouseX = event.clientX - rect.left
       const mouseY = event.clientY - rect.top
@@ -294,6 +347,15 @@ export default defineComponent({
       }
 
       const entity = this.state.getEntityAt({ x: col, y: row })
+
+      // Checking if we click to remove an action
+      for (const [rootId, action] of Object.entries(this.registredActionsPerRoot)) {
+        const [, , x, y] = action.split(' ')
+        if (Number(x) === col && Number(y) === row) {
+          this.removeActionFromRoot(Number(rootId))
+          return
+        }
+      }
 
       // If clicking on a root owned by the player
       if (
@@ -372,7 +434,6 @@ export default defineComponent({
     },
     addAction(organ: OrganType, direction: Direction) {
       this.selectedRoot = null
-      this.drawGrid()
       if (organ === EntityType.ROOT) {
         const sporerParent = this.findSporerParent(this.popupX, this.popupY)
         if (!sporerParent) {
