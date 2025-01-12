@@ -167,6 +167,11 @@ export default defineComponent({
 
         this.state.turn = newGame.turn
 
+        await updateDoc(this.gameRef, {
+          turn: this.state.turn,
+          'waitingForActions.1': true,
+        })
+
         await this.handleActions(true)
       }
     },
@@ -226,13 +231,12 @@ export default defineComponent({
           'actions',
         ).withConverter(actionFirestoreConvertor)
         await addDoc(collectionRef, action)
-
-        const waitingForActionsField = `waitingForActions.${this.playerId}`
-
-        await updateDoc(this.gameRef, {
-          [waitingForActionsField]: false,
-        })
       }
+
+      const waitingForActionsField = `waitingForActions.${this.playerId}`
+      await updateDoc(this.gameRef, {
+        [waitingForActionsField]: false,
+      })
     },
     async handleActions(onlyNew = true) {
       const actionDocs = await getDocs(this.actionsRef)

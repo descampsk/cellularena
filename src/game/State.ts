@@ -275,6 +275,8 @@ export class State {
       throw new Error(`Cannot find parent organ with id ${organId}`)
     }
 
+    const organRootId = parent.type === EntityType.ROOT ? parent.organId : parent.organRootId
+
     const newEntity = new Entity(
       target.x,
       target.y,
@@ -282,8 +284,8 @@ export class State {
       playerId,
       this.nextOrganId, // Assuming the new entity has the next id
       direction,
-      parent.organId,
-      type === EntityType.ROOT ? this.nextOrganId : parent.organRootId,
+      type === EntityType.ROOT ? 0 : parent.organId,
+      type === EntityType.ROOT ? 0 : organRootId,
     )
     const entityAtTarget = this.getEntityAt(target)
     if (entityAtTarget.owner !== Owner.NONE && !entityAtTarget.oldEntity) {
@@ -324,6 +326,8 @@ export class State {
     })
 
     this.entities = this.entities.filter((e) => !entitiesToDestroy.includes(e))
+
+    console.log('entitiesToDestroy', entitiesToDestroy)
 
     entitiesToDestroy.forEach((entity) => {
       this.grid[entity.x + entity.y * this.width] = new Entity(

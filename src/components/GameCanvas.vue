@@ -269,6 +269,7 @@ export default defineComponent({
                 organId: entity.organId,
                 organRootId: entity.organRootId,
                 organDir: entity.organDir,
+                organParentId: entity.organParentId,
               })
             : `${col},${row}`
 
