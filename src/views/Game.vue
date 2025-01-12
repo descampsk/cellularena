@@ -1,6 +1,14 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="game-layout">
+    <!-- Add rotation overlay -->
+    <div v-if="needsRotation" class="rotation-overlay">
+      <div class="rotation-content">
+        <div class="rotate-icon">⟳</div>
+        <p>Please rotate your device to landscape mode</p>
+      </div>
+    </div>
+
     <div class="game-area">
       <div class="top-section">
         <div v-if="game" class="players-container">
@@ -51,15 +59,9 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { Direction, Owner } from '@/game/Entity'
-import { State, type OrganType } from '@/game/State'
-import {
-  type Action,
-  actionFirestoreConvertor,
-  GrowAction,
-  SporeAction,
-  WaitAction,
-} from '@/game/Actions'
+import { Owner } from '@/game/Entity'
+import { State } from '@/game/State'
+import { actionFirestoreConvertor, GrowAction, SporeAction, WaitAction } from '@/game/Actions'
 import { useDocument, useFirestore } from 'vuefire'
 import {
   addDoc,
@@ -102,9 +104,10 @@ export default defineComponent({
       state: new State(),
       isPaused: true,
       actionText: '',
-      registredActionsPerRoot: {} as Record<number, string>,
+      registredActionsPerRoot: {} as Record<number, GrowAction | SporeAction>,
       Owner, // Add Owner enum to template
       copyStatus: 'Share Link',
+      needsRotation: false,
     }
   },
   computed: {
@@ -138,6 +141,12 @@ export default defineComponent({
     this.handleActions(false)
 
     this.initialized = true
+
+    this.checkOrientation()
+    window.addEventListener('resize', this.checkOrientation)
+  },
+  unmounted() {
+    window.removeEventListener('resize', this.checkOrientation)
   },
   watch: {
     game: async function (newGame: Game) {
@@ -200,26 +209,7 @@ export default defineComponent({
     async processActions() {
       const actions = Object.values(this.registredActionsPerRoot)
 
-      for (const actionLine of actions) {
-        const [actionType, parentOrganId, x, y, type, direction] = actionLine.split(' ')
-        let action: Action = new WaitAction(this.playerId, this.state.turn)
-        if (actionType === 'GROW') {
-          action = new GrowAction(
-            this.playerId,
-            this.state.turn,
-            Number(parentOrganId),
-            { x: Number(x), y: Number(y) },
-            type as OrganType,
-            direction as Direction,
-          )
-        }
-        if (actionType === 'SPORE') {
-          action = new SporeAction(this.playerId, this.state.turn, Number(parentOrganId), {
-            x: Number(x),
-            y: Number(y),
-          })
-        }
-
+      for (const action of actions) {
         const collectionRef = collection(
           useFirestore(),
           'games',
@@ -269,7 +259,7 @@ export default defineComponent({
       }
       this.registredActionsPerRoot = {}
     },
-    addActionToRoot(action: string, rootId: number) {
+    addActionToRoot(action: GrowAction | SporeAction, rootId: number) {
       this.registredActionsPerRoot[rootId] = action
     },
     async copyShareLink() {
@@ -291,6 +281,9 @@ export default defineComponent({
         console.error('Failed to copy:', err)
         this.copyStatus = 'Failed to copy'
       }
+    },
+    checkOrientation() {
+      this.needsRotation = window.innerHeight > window.innerWidth
     },
   },
 })
@@ -497,5 +490,51 @@ button {
 button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+}
+
+.rotation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.rotation-content {
+  text-align: center;
+  color: white;
+  padding: 20px;
+}
+
+.rotate-icon {
+  font-size: 48px;
+  animation: rotate 2s infinite linear;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Optional: Force landscape mode using CSS */
+@media screen and (orientation: portrait) {
+  .game-layout {
+    transform: rotate(90deg);
+    transform-origin: left top;
+    width: 100vh;
+    height: 100vw;
+    position: absolute;
+    top: 100%;
+    left: 0;
+  }
 }
 </style>

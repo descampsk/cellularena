@@ -25,6 +25,7 @@ import { createImage } from '@/utils/imageLoader'
 import { defineComponent, type PropType } from 'vue'
 import ActionSelectionPopup from './ActionSelectionPopup.vue'
 import { Game } from '@/game/Game'
+import { GrowAction, SporeAction } from '@/game/Actions'
 
 const directionToRotation: Record<Direction, number> = {
   [Direction.E]: 0,
@@ -54,11 +55,11 @@ export default defineComponent({
       required: true,
     },
     registredActionsPerRoot: {
-      type: Object as PropType<Record<number, string>>,
+      type: Object as PropType<Record<number, GrowAction | SporeAction>>,
       required: true,
     },
     addActionToRoot: {
-      type: Function as PropType<(action: string, rootId: number) => void>,
+      type: Function as PropType<(action: GrowAction | SporeAction, rootId: number) => void>,
       required: true,
     },
     removeActionFromRoot: {
@@ -222,8 +223,12 @@ export default defineComponent({
 
     drawRegisteredActions() {
       Object.values(this.registredActionsPerRoot).forEach((action) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const [actionType, _parentOrganId, x, y, type, direction] = action.split(' ')
+        const {
+          actionType,
+          target: { x, y },
+          type,
+          direction,
+        } = action
         const organType = (actionType === 'GROW' ? type : 'ROOT') as EntityType
         const entity = new Entity(
           Number(x),
@@ -350,7 +355,9 @@ export default defineComponent({
 
       // Checking if we click to remove an action
       for (const [rootId, action] of Object.entries(this.registredActionsPerRoot)) {
-        const [, , x, y] = action.split(' ')
+        const {
+          target: { x, y },
+        } = action
         if (Number(x) === col && Number(y) === row) {
           this.removeActionFromRoot(Number(rootId))
           return
@@ -439,7 +446,10 @@ export default defineComponent({
         if (!sporerParent) {
           return
         }
-        const action = `SPORE ${sporerParent.organId} ${this.popupX} ${this.popupY}`
+        const action = new SporeAction(this.playerId, this.state.turn, sporerParent.organId, {
+          x: this.popupX,
+          y: this.popupY,
+        })
 
         this.addActionToRoot(action, sporerParent.organRootId)
         return
@@ -450,7 +460,14 @@ export default defineComponent({
         return
       }
 
-      const action = `GROW ${parent.organId} ${this.popupX} ${this.popupY} ${organ} ${direction}`
+      const action = new GrowAction(
+        this.playerId,
+        this.state.turn,
+        parent.organId,
+        { x: this.popupX, y: this.popupY },
+        organ,
+        direction,
+      )
 
       const rootId = parent.type === EntityType.ROOT ? parent.organId : parent.organRootId
       this.addActionToRoot(action, rootId)
