@@ -15,6 +15,7 @@
           <div class="left-player">
             <PlayerInfo
               :state="state"
+              :temporaryProteins="temporaryProteinsPerPlayer[Owner.ONE]"
               :playerId="Owner.ONE"
               :isActive="playerId === Owner.ONE"
               :game="game"
@@ -31,6 +32,7 @@
           <div class="right-player">
             <PlayerInfo
               :state="state"
+              :temporaryProteins="temporaryProteinsPerPlayer[Owner.TWO]"
               :playerId="Owner.TWO"
               :isActive="playerId === Owner.TWO"
               :game="game"
@@ -46,6 +48,7 @@
             :state="state"
             :game="game"
             :playerId="playerId"
+            :temporaryProteins="temporaryProteinsPerPlayer[playerId]"
             :registredActionsPerRoot="registredActionsPerRoot"
             :addActionToRoot="addActionToRoot"
             :removeActionFromRoot="removeActionFromRoot"
@@ -62,8 +65,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { Owner } from '@/game/Entity'
-import { State } from '@/game/State'
+import { Owner, ProteinTypes } from '@/game/Entity'
+import { ProteinsPerOrgan, State, type OrganType, type ProteinType } from '@/game/State'
 import { actionFirestoreConvertor, GrowAction, SporeAction, WaitAction } from '@/game/Actions'
 import { useDocument, useFirestore } from 'vuefire'
 import {
@@ -122,6 +125,24 @@ export default defineComponent({
     waitingMessage(): string {
       const waitingPlayer = this.playerId === Owner.ONE ? 'Player Two' : 'Player One'
       return `Waiting for ${waitingPlayer} to play...`
+    },
+    temporaryProteinsPerPlayer(): {
+      [Owner.ONE]: Record<ProteinType, number>
+      [Owner.TWO]: Record<ProteinType, number>
+    } {
+      const tmpProteinsPerPlayer = {
+        [Owner.ONE]: { ...this.state.proteinsPerPlayer[Owner.ONE] },
+        [Owner.TWO]: { ...this.state.proteinsPerPlayer[Owner.TWO] },
+      }
+      for (const action of Object.values(this.registredActionsPerRoot)) {
+        const { playerId, type } = action
+        const cost = ProteinsPerOrgan[type as OrganType]
+        for (const protein of ProteinTypes) {
+          tmpProteinsPerPlayer[playerId][protein as ProteinType] -= cost[protein as ProteinType]
+        }
+      }
+
+      return tmpProteinsPerPlayer
     },
   },
   async mounted() {

@@ -4,24 +4,32 @@
       <h3>Select Action in {{ x }}, {{ y }}</h3>
       <div v-for="organ in organTypes" :key="organ">
         <div v-if="isDirectional(organ)">
-          <div>{{ organ }}</div>
-          <div class="directions">
+          <div
+            style="display: flex; flex-direction: row; justify-content: center; align-items: center"
+          >
+            {{ organ }}
+            <!-- <img src="../assets/a.png" style="width: 20px; height: 20px" /> -->
+            <!-- <img src="../assets/b.png" style="width: 20px; height: 20px" /> -->
+          </div>
+          <div class="organs">
             <img
               v-for="direction in directions"
               :key="direction"
               :src="getImage(organ)"
-              :style="getDirectionStyle(direction)"
+              :style="getStyle(organ as OrganType, direction)"
               @click="selectAction(organ as OrganType, direction)"
             />
           </div>
         </div>
         <div v-else>
           <div>{{ organ }}</div>
-          <img
-            :src="getImage(organ)"
-            :style="getDirectionStyle(Direction.X)"
-            @click="selectAction(organ as OrganType, Direction.X)"
-          />
+          <div class="organs">
+            <img
+              :src="getImage(organ)"
+              :style="getStyle(organ as OrganType, Direction.X)"
+              @click="selectAction(organ as OrganType, Direction.X)"
+            />
+          </div>
         </div>
       </div>
       <button @click="closePopup">Cancel</button>
@@ -32,7 +40,7 @@
 <script lang="ts">
 import { defineComponent, type PropType, type StyleValue } from 'vue'
 import { Direction, EntityType } from '@/game/Entity'
-import type { OrganType } from '@/game/State'
+import { ProteinsPerOrgan, type OrganType, type ProteinType } from '@/game/State'
 
 export default defineComponent({
   props: {
@@ -50,6 +58,10 @@ export default defineComponent({
     },
     playerId: {
       type: Number,
+      required: true,
+    },
+    temporaryProteins: {
+      type: Object as PropType<Record<ProteinType, number>>,
       required: true,
     },
     onClose: {
@@ -75,6 +87,13 @@ export default defineComponent({
     }
   },
   methods: {
+    hasEnoughProteins(organ: OrganType): boolean {
+      const cost = ProteinsPerOrgan[organ]
+      const hasEnough = Object.entries(cost).every(
+        ([protein, value]) => value <= this.temporaryProteins[protein as ProteinType],
+      )
+      return hasEnough
+    },
     isDirectional(organ: EntityType): boolean {
       return [EntityType.HARVESTER, EntityType.TENTACLE, EntityType.SPORER].includes(organ)
     },
@@ -92,7 +111,7 @@ export default defineComponent({
 
       return image.default
     },
-    getDirectionStyle(direction: Direction): StyleValue {
+    getStyle(organ: OrganType, direction: Direction): StyleValue {
       const rotationDegrees = {
         [Direction.X]: 0,
         [Direction.N]: -90,
@@ -100,13 +119,21 @@ export default defineComponent({
         [Direction.S]: 90,
         [Direction.W]: 180,
       }
+
+      const enoughProteins = this.hasEnoughProteins(organ)
+      const grayscale = enoughProteins ? 'grayscale(0)' : 'grayscale(1)'
+
       return {
         transform: `rotate(${rotationDegrees[direction]}deg)`,
         width: '30px',
         height: '30px',
+        filter: grayscale,
+        cursor: enoughProteins ? 'pointer' : undefined,
       }
     },
     selectAction(organ: OrganType, direction: Direction) {
+      if (!this.hasEnoughProteins(organ)) return
+
       this.onSelect(organ, direction)
       this.closePopup()
     },
@@ -146,13 +173,35 @@ export default defineComponent({
   text-align: center;
 }
 
-.directions img {
+.organs img {
   margin: 5px;
-  cursor: pointer;
 }
 
 img {
   -webkit-transition: transform 0.3s ease;
   transition: transform 0.3s ease;
+}
+
+.organ-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.protein-costs {
+  display: flex;
+  gap: 4px;
+}
+
+.protein-icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.protein-icon.required {
+  opacity: 1;
 }
 </style>

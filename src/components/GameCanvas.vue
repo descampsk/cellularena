@@ -3,6 +3,7 @@
   <ActionSelectionPopup
     :visible="popupVisible"
     :playerId="playerId"
+    :temporaryProteins="temporaryProteins"
     :x="popupX"
     :y="popupY"
     :onClose="closePopup"
@@ -20,7 +21,7 @@ import {
   ProteinTypes,
 } from '@/game/Entity'
 import { AllDxDy, getDirection } from '@/game/helpers'
-import { OrganTypes, State, type OrganType } from '@/game/State'
+import { OrganTypes, State, type OrganType, type ProteinType } from '@/game/State'
 import { createImage } from '@/utils/imageLoader'
 import { defineComponent, type PropType } from 'vue'
 import ActionSelectionPopup from './ActionSelectionPopup.vue'
@@ -54,6 +55,10 @@ export default defineComponent({
     },
     playerId: {
       type: Number,
+      required: true,
+    },
+    temporaryProteins: {
+      type: Object as PropType<Record<ProteinType, number>>,
       required: true,
     },
     registredActionsPerRoot: {

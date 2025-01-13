@@ -10,8 +10,8 @@
 <script lang="ts">
 import { Owner } from '@/game/Entity'
 import { Game } from '@/game/Game'
-import { State } from '@/game/State'
-import { defineComponent } from 'vue'
+import { State, type ProteinType } from '@/game/State'
+import { defineComponent, type PropType } from 'vue'
 
 export default defineComponent({
   props: {
@@ -19,8 +19,12 @@ export default defineComponent({
       type: State,
       required: true,
     },
+    temporaryProteins: {
+      type: Object as PropType<Record<ProteinType, number>>,
+      required: true,
+    },
     playerId: {
-      type: Number,
+      type: Number as PropType<Owner.ONE | Owner.TWO>,
       required: true,
     },
     isActive: {
@@ -48,11 +52,13 @@ export default defineComponent({
       return this.state.entities.filter((e) => e.owner === this.playerId).length
     },
     proteinsDisplay(): string {
-      const proteins = this.state.proteinsPerPlayer[this.playerId as Owner.ONE | Owner.TWO]
+      const proteins = this.isActive
+        ? this.temporaryProteins
+        : this.state.proteinsPerPlayer[this.playerId]
       return `A: ${proteins.A}, B: ${proteins.B}, C: ${proteins.C}, D: ${proteins.D}`
     },
     gainsDisplay(): string {
-      const gains = this.state.proteinGainsPerPlayer[this.playerId as Owner.ONE | Owner.TWO]
+      const gains = this.state.proteinGainsPerPlayer[this.playerId]
       return `A: ${gains.A}, B: ${gains.B}, C: ${gains.C}, D: ${gains.D}`
     },
   },
