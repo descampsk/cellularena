@@ -2,12 +2,14 @@ import { v4 } from 'uuid'
 import { Owner } from './Entity'
 import type { FirestoreDataConverter, QueryDocumentSnapshot } from 'firebase/firestore'
 
+export type GameMode = 'training' | 'versus' | 'solo'
+
 export class Game {
   public id = v4()
 
   public seed: string
 
-  public soloMode = false
+  public mode: GameMode = 'versus'
 
   public playerIds: Record<string, Owner.ONE | Owner.TWO> = {
     [v4()]: Owner.ONE,
@@ -34,14 +36,14 @@ export class Game {
 
   constructor(game: Partial<Game>) {
     this.seed = v4()
-    const { connectedPlayers, playerIds, seed, turn, waitingForActions, id, soloMode } = game
+    const { connectedPlayers, playerIds, seed, turn, waitingForActions, id, mode } = game
     if (id) this.id = id
     if (connectedPlayers) this.connectedPlayers = connectedPlayers
     if (playerIds) this.playerIds = playerIds
     if (seed) this.seed = seed
     if (turn) this.turn = turn
     if (waitingForActions) this.waitingForActions = waitingForActions
-    if (soloMode) this.soloMode = soloMode
+    if (mode) this.mode = mode
   }
 }
 

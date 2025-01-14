@@ -4,15 +4,28 @@
       <div class="dialog-content" @click.stop>
         <h2>Create New Game</h2>
         <div class="form-group">
-          <label class="switch">
-            <input type="checkbox" v-model="settings.soloMode" />
-            <span class="slider"></span>
-            <span class="label-text">Solo Mode</span>
-          </label>
+          <label class="select-label">Game Mode</label>
+          <div class="select-wrapper">
+            <select v-model="settings.mode">
+              <option value="training">Training</option>
+              <option value="solo">Solo vs AI</option>
+              <option value="versus">Versus</option>
+            </select>
+            <span class="info-icon"
+              >ⓘ
+              <div class="tooltip">
+                <div v-if="settings.mode === 'training'">
+                  Control both players to practice strategies
+                </div>
+                <div v-if="settings.mode === 'solo'">Challenge yourself against an AI opponent</div>
+                <div v-if="settings.mode === 'versus'">Compete against another player</div>
+              </div>
+            </span>
+          </div>
         </div>
         <div class="dialog-buttons">
           <button class="cancel-button" @click="close">Cancel</button>
-          <button class="create-button" @click="createGame">Create</button>
+          <button class="create-button" @click="createGame(settings)">Create</button>
         </div>
       </div>
     </div>
@@ -20,7 +33,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import type { GameMode } from '@/game/Game'
+import { defineComponent, ref, type PropType } from 'vue'
 
 export default defineComponent({
   name: 'CreateGameDialog',
@@ -29,26 +43,24 @@ export default defineComponent({
       type: Boolean,
       required: true,
     },
+    createGame: {
+      type: Function as PropType<(settings: { mode: GameMode }) => void>,
+      required: true,
+    },
   },
-  emits: ['update:modelValue', 'create'],
+  emits: ['update:modelValue'],
   setup(props, { emit }) {
     const settings = ref({
-      soloMode: false,
+      mode: 'versus' as GameMode,
     })
 
     const close = () => {
       emit('update:modelValue', false)
     }
 
-    const createGame = () => {
-      emit('create', settings.value)
-      close()
-    }
-
     return {
       settings,
       close,
-      createGame,
     }
   },
 })
@@ -183,5 +195,54 @@ button {
 .dialog-enter-from,
 .dialog-leave-to {
   opacity: 0;
+}
+
+.select-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+select {
+  flex: 1;
+  padding: 0.5rem;
+  background-color: #333;
+  color: white;
+  border: 1px solid #4caf50;
+  border-radius: 4px;
+}
+
+.info-icon {
+  position: relative;
+  cursor: help;
+  color: #4caf50;
+}
+
+.tooltip {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 1px solid #4caf50;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 100;
+  transition: opacity 0.2s;
+}
+
+.info-icon:hover .tooltip {
+  display: block;
 }
 </style>

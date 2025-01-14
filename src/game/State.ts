@@ -428,4 +428,27 @@ export class State {
       })
     })
   }
+
+  createInputsForAI(playerId: Owner.ONE | Owner.TWO): string[] {
+    const otherPlayerId = playerId === Owner.ONE ? Owner.TWO : Owner.ONE
+    const inputs = []
+    inputs.push(`${this.width} ${this.height}`)
+    inputs.push(`${this.entities.length}`)
+    this.entities.forEach((entity) => {
+      inputs.push(
+        `${entity.x} ${entity.y} ${entity.type} ${entity.owner} ${entity.organId} ${entity.organDir} ${entity.organParentId} ${entity.organRootId}`,
+      )
+    })
+    inputs.push(
+      `${this.proteinsPerPlayer[playerId].A} ${this.proteinsPerPlayer[playerId].B} ${this.proteinsPerPlayer[playerId].C} ${this.proteinsPerPlayer[playerId].D}`,
+    )
+    inputs.push(
+      `${this.proteinsPerPlayer[otherPlayerId].A} ${this.proteinsPerPlayer[otherPlayerId].B} ${this.proteinsPerPlayer[otherPlayerId].C} ${this.proteinsPerPlayer[otherPlayerId].D}`,
+    )
+    inputs.push(
+      `${this.entities.filter((e) => e.type === EntityType.ROOT && e.owner === playerId).length}`,
+    )
+
+    return inputs
+  }
 }

@@ -22,10 +22,10 @@
             />
           </div>
           <div v-if="game" class="share-button-container">
-            <button v-if="game.soloMode" @click="changePlayerId" class="share-button">
+            <button v-if="game.mode === 'training'" @click="changePlayerId" class="share-button">
               Change Player
             </button>
-            <button v-else @click="copyShareLink" class="share-button">
+            <button v-else-if="game.mode === 'versus'" @click="copyShareLink" class="share-button">
               {{ copyStatus }}
             </button>
           </div>
@@ -65,7 +65,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { Owner, ProteinTypes } from '@/game/Entity'
+import { Direction, Owner, ProteinTypes } from '@/game/Entity'
 import { ProteinsPerOrgan, State, type OrganType, type ProteinType } from '@/game/State'
 import { actionFirestoreConvertor, GrowAction, SporeAction, WaitAction } from '@/game/Actions'
 import { useDocument, useFirestore } from 'vuefire'
@@ -83,6 +83,7 @@ import { Game, gameFirestoreConvertor } from '@/game/Game'
 import PlayerInfo from '@/components/PlayerInfo.vue'
 import GameCanvas from '@/components/GameCanvas.vue'
 import { logEvent } from 'firebase/analytics'
+import type { Bot } from '@/bots/bots'
 
 export default defineComponent({
   components: {
@@ -100,6 +101,7 @@ export default defineComponent({
     const actionsRef = collection(db, 'games', gameId, 'actions').withConverter(
       actionFirestoreConvertor,
     )
+
     return {
       initialized: false,
       gameRef,
@@ -109,6 +111,7 @@ export default defineComponent({
       playerUuid,
       playerId: Owner.ONE as Owner.ONE | Owner.TWO,
       state: new State(),
+      bot: null as Bot | null,
       isPaused: true,
       actionText: '',
       registredActionsPerRoot: {} as Record<number, GrowAction | SporeAction>,
@@ -165,6 +168,10 @@ export default defineComponent({
 
     this.handleActions(false)
 
+    if (game.mode === 'solo') {
+      this.bot = (await this.loadBot('q6IXPuqRV1')) as Bot
+    }
+
     this.initialized = true
 
     this.checkOrientation()
@@ -180,7 +187,7 @@ export default defineComponent({
       const waitingForPlayerTwo = newGame.waitingForActions[Owner.TWO]
 
       if (
-        (this.playerId === Owner.ONE || newGame.soloMode) &&
+        (this.playerId === Owner.ONE || newGame.mode === 'training') &&
         !waitingForPlayerOne &&
         !waitingForPlayerTwo
       ) {
@@ -255,6 +262,10 @@ export default defineComponent({
       await updateDoc(this.gameRef, {
         [waitingForActionsField]: false,
       })
+
+      if (this.game?.mode === 'solo') {
+        this.resolveAIActions()
+      }
     },
     async handleActions(onlyNew = true) {
       const actionDocs = await getDocs(this.actionsRef)
@@ -319,6 +330,73 @@ export default defineComponent({
     },
     checkOrientation() {
       this.needsRotation = window.innerHeight > window.innerWidth
+    },
+    async loadBot(botName: string): Promise<Bot> {
+      try {
+        const response = await fetch(`/bots/${botName}.js`)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch bot: ${botName}`)
+        }
+        const code = await response.text()
+        const blob = new Blob([code], { type: 'text/javascript' })
+        const url = URL.createObjectURL(blob)
+        const module = await import(/* @vite-ignore */ url)
+        URL.revokeObjectURL(url)
+        return (module.default || module) as Bot
+      } catch (error) {
+        console.error(`Failed to load bot: ${botName}`, error)
+        throw error
+      }
+    },
+    async resolveAIActions() {
+      if (!this.bot) {
+        throw new Error('Bot is not initialized')
+      }
+
+      const botPlayerId = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
+
+      const inputs = this.state.createInputsForAI(botPlayerId)
+      console.log(inputs.join('\n'))
+
+      const actionsStr = this.bot.run(inputs)
+      console.log(actionsStr)
+
+      const actions = actionsStr.map((actionStr) => {
+        const [actionType, ...args] = actionStr.split(' ')
+        const turn = this.state.turn
+        if (actionType === 'WAIT') {
+          return new WaitAction(botPlayerId, turn)
+        } else if (actionType === 'GROW') {
+          const [organId, x, y, type, direction] = args
+          return new GrowAction(
+            botPlayerId,
+            turn,
+            Number(organId),
+            { x: Number(x), y: Number(y) },
+            type as OrganType,
+            direction as Direction,
+          )
+        } else if (actionType === 'SPORE') {
+          const [organId, x, y] = args
+          return new SporeAction(botPlayerId, turn, Number(organId), { x: Number(x), y: Number(y) })
+        } else {
+          throw new Error(`Unknown action type: ${actionType}`)
+        }
+      })
+      for (const action of actions) {
+        const collectionRef = collection(
+          useFirestore(),
+          'games',
+          this.gameId,
+          'actions',
+        ).withConverter(actionFirestoreConvertor)
+        await addDoc(collectionRef, action)
+      }
+
+      const waitingForActionsField = `waitingForActions.${botPlayerId}`
+      await updateDoc(this.gameRef, {
+        [waitingForActionsField]: false,
+      })
     },
   },
 })

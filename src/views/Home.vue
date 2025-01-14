@@ -9,7 +9,7 @@
         <!-- Add more menu buttons here -->
       </nav>
     </div>
-    <CreateGameDialog v-model="showCreateDialog" @create="handleGameCreate" />
+    <CreateGameDialog v-model="showCreateDialog" :createGame="handleGameCreate" />
   </div>
 </template>
 
@@ -67,7 +67,9 @@ export default defineComponent({
     }
   },
   methods: {
-    async handleGameCreate(settings: { soloMode: boolean }) {
+    async handleGameCreate(settings: { mode: 'versus' | 'solo' | 'training' }) {
+      this.showCreateDialog = false
+
       const db = useFirestore()
       const playerOneUuid = uuidv4()
       const playerTwoUuid = uuidv4()
@@ -79,11 +81,11 @@ export default defineComponent({
           [playerOneUuid]: Owner.ONE,
           [playerTwoUuid]: Owner.TWO,
         },
-        soloMode: settings.soloMode,
+        mode: settings.mode,
       })
 
       logEvent(firebaseAnalytics, 'create_game', {
-        solo_mode: settings.soloMode,
+        mode: settings.mode,
       })
 
       const gameDoc = doc(db, 'games', game.id).withConverter(gameFirestoreConvertor)
