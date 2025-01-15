@@ -6,6 +6,11 @@ This project has to goal to make an online two player version of the game.
 
 It uses VueJS, Firebase Hosting and Firestore.
 
+Try out here: https://cellularena.web.app
+
+![image](https://github.com/user-attachments/assets/a359f493-1218-41bf-9e83-2a7159572911)
+
+
 ## Project Setup
 
 Easiest way to use this repository is to launch it with the devcontainer included.
