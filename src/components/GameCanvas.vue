@@ -401,18 +401,22 @@ export default defineComponent({
       }
     },
 
-    findParent(x: number, y: number): Entity | null {
+    findParent(x: number, y: number, selectedRoot: Entity): Entity | null {
       const neighours = this.state
         .getNeighboursButWall({ x, y })
         .map((n) => this.state.getEntityAt(n))
       const parent = neighours.find((n) => {
-        return n && n.owner === this.playerId
+        return (
+          n &&
+          n.owner === this.playerId &&
+          (n.organRootId === selectedRoot.organId || n.organId === selectedRoot.organId)
+        )
       })
 
       return parent ? parent : null
     },
 
-    findSporerParent(x: number, y: number): Entity | null {
+    findSporerParent(x: number, y: number, selectedRoot: Entity): Entity | null {
       let canSpore = false
       let entity = this.state.getEntityAt({ x, y })
       for (const [dx, dy] of AllDxDy) {
@@ -428,6 +432,7 @@ export default defineComponent({
 
           if (
             entity.type === EntityType.SPORER &&
+            entity.organRootId === selectedRoot.organId &&
             entity.owner === this.playerId &&
             entity.organDir === getDirection({ x: nx, y: ny }, { x: nx - dx, y: ny - dy })
           ) {
@@ -451,9 +456,13 @@ export default defineComponent({
       this.popupVisible = false
     },
     addAction(organ: OrganType, direction: Direction) {
-      this.selectedRoot = null
+      if (!this.selectedRoot) {
+        return
+      }
+
       if (organ === EntityType.ROOT) {
-        const sporerParent = this.findSporerParent(this.popupX, this.popupY)
+        const sporerParent = this.findSporerParent(this.popupX, this.popupY, this.selectedRoot)
+        this.selectedRoot = null
         if (!sporerParent) {
           return
         }
@@ -466,7 +475,8 @@ export default defineComponent({
         return
       }
 
-      const parent = this.findParent(this.popupX, this.popupY)
+      const parent = this.findParent(this.popupX, this.popupY, this.selectedRoot)
+      this.selectedRoot = null
       if (!parent) {
         return
       }
