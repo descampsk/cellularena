@@ -13,14 +13,14 @@
       </nav>
     </div>
     <CreateGameDialog v-model="showCreateDialog" :createGame="handleGameCreate" />
-    <ReplayGameDialog v-model="showReplayDialog" />
+    <ReplayGameDialog v-model="showReplayDialog" :launchReplay="launchReplay" />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import { useFirestore } from 'vuefire'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { v4 as uuidv4 } from 'uuid'
 import { Game, gameFirestoreConvertor } from '@/game/Game'
 import { Owner } from '@/game/Entity'
@@ -28,38 +28,7 @@ import { logEvent } from 'firebase/analytics'
 import { firebaseAnalytics } from '@/infra/firebase'
 import CreateGameDialog from '@/components/CreateGameDialog.vue'
 import ReplayGameDialog from '@/components/ReplayGameDialog.vue'
-
-const seeds = [
-  '-109498249532328380',
-  '155549240508571069',
-  '4748602558057728000',
-  '5931977594442630112',
-  '7621060308853830000',
-  '-110221706056499790',
-  '211264768185193440',
-  '4828169237660710000',
-  '5979263919950389741',
-  '7647223510213090658',
-  '1181878746852622272',
-  '-2194086977806973000',
-  '5119320096785750000',
-  '6374963278771192000',
-  '7912673889433137414',
-  '-1471184786810387200',
-  '403701809741153383',
-  '-5149157639354022000',
-  '-6401560456697912000',
-  '-7999696972769541000',
-  '-1536354671034605600',
-  '4038497759783998197',
-  '5640191983874642000',
-  '6510848175589428331',
-  '8489931167210928781',
-  '1543001585024110057',
-  '4728951963199696047',
-  '5715602376772326278',
-  '7500291002500587345',
-]
+import { getRandomSeed } from '@/game/maps'
 
 export default defineComponent({
   name: 'HomeView',
@@ -81,7 +50,7 @@ export default defineComponent({
       const db = useFirestore()
       const playerOneUuid = uuidv4()
       const playerTwoUuid = uuidv4()
-      const seed = seeds[Math.floor(Math.random() * seeds.length)]
+      const seed = getRandomSeed()
 
       const game = new Game({
         seed,
@@ -101,6 +70,21 @@ export default defineComponent({
 
       // Route to the new game
       this.$router.push(`/game/${game.id}/player/${playerOneUuid}`)
+    },
+    async launchReplay(gameId: string) {
+      const gameRef = doc(useFirestore(), 'games', gameId).withConverter(gameFirestoreConvertor)
+      const gameDoc = await getDoc(gameRef)
+      const game = gameDoc.data()
+
+      if (!game) {
+        this.replayDialogError = 'Game not found'
+        return
+      }
+
+      this.showReplayDialog = false
+
+      // Route to the replay game
+      this.$router.push(`/replay/${gameId}`)
     },
   },
 })
