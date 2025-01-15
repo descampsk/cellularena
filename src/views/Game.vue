@@ -21,7 +21,7 @@
               :game="game"
             />
           </div>
-          <div v-if="game" class="share-button-container">
+          <div v-if="game && !isReplay" class="share-button-container">
             <button v-if="game.mode === 'versus'" @click="copyShareLink" class="share-button">
               {{ copyStatus }}
             </button>
@@ -52,9 +52,16 @@
           />
         </div>
       </div>
-      <div class="action-buttons">
-        <button v-if="canSubmitActions" @click="processActions">Apply Actions</button>
+      <div v-if="!isReplay" class="action-buttons">
+        <button v-if="canSubmitActions" @click="processActions" :disabled="isProcessing">
+          <span v-if="isProcessing" class="loading-spinner">⟳</span>
+          {{ isProcessing ? 'Processing...' : 'Apply Actions' }}
+        </button>
         <button v-else disabled>Waiting for the other player</button>
+      </div>
+      <div v-else class="action-buttons">
+        <button @click="replayRefresh">Refresh</button>
+        <button @click="replayNextTurn">Next Turn</button>
       </div>
     </div>
   </div>
@@ -91,6 +98,7 @@ export default defineComponent({
     const db = getFirestore(firebaseApp)
     const gameId = this.$route.params.gameId as string
     const playerUuid = this.$route.params.playerUuid as string
+    const isReplay = this.$route.name === 'replay'
 
     const gameRef = doc(db, 'games', gameId).withConverter(gameFirestoreConvertor)
     const game = useDocument<Game>(gameRef)
@@ -101,6 +109,7 @@ export default defineComponent({
 
     return {
       initialized: false,
+      isReplay,
       gameRef,
       game,
       gameId: this.$route.params.gameId as string,
@@ -115,6 +124,7 @@ export default defineComponent({
       Owner, // Add Owner enum to template
       copyStatus: 'Share Link',
       needsRotation: false,
+      isProcessing: false,
     }
   },
   computed: {
@@ -157,16 +167,18 @@ export default defineComponent({
 
     const game = gameDoc.data()
 
-    this.state.turn = game.turn
-
     this.playerId = game.playerIds[this.playerUuid]
 
     await this.initializeGame(game.seed)
 
-    this.handleActions(false)
-
-    if (game.mode === 'solo') {
-      this.bot = (await this.loadBot('q6IXPuqRV1')) as Bot
+    if (!this.isReplay) {
+      this.state.turn = game.turn
+      this.handleActions(false)
+      if (game.mode === 'solo') {
+        this.bot = (await this.loadBot('q6IXPuqRV1')) as Bot
+      }
+    } else {
+      this.state.turn = 1
     }
 
     this.initialized = true
@@ -240,32 +252,41 @@ export default defineComponent({
       delete this.registredActionsPerRoot[root]
     },
     async processActions() {
-      logEvent(firebaseAnalytics, 'apply_actions')
-      const actions = Object.values(this.registredActionsPerRoot).filter(
-        (a) => a.playerId === this.playerId,
-      )
+      if (this.isProcessing) return
 
-      for (const action of actions) {
-        const collectionRef = collection(
-          useFirestore(),
-          'games',
-          this.gameId,
-          'actions',
-        ).withConverter(actionFirestoreConvertor)
-        await addDoc(collectionRef, action)
-      }
+      try {
+        this.isProcessing = true
+        logEvent(firebaseAnalytics, 'apply_actions')
+        const actions = Object.values(this.registredActionsPerRoot).filter(
+          (a) => a.playerId === this.playerId,
+        )
 
-      const waitingForActionsField = `waitingForActions.${this.playerId}`
-      await updateDoc(this.gameRef, {
-        [waitingForActionsField]: false,
-      })
+        for (const action of actions) {
+          const collectionRef = collection(
+            useFirestore(),
+            'games',
+            this.gameId,
+            'actions',
+          ).withConverter(actionFirestoreConvertor)
+          await addDoc(collectionRef, action)
+        }
 
-      if (this.game?.mode === 'solo') {
-        this.resolveAIActions()
-      }
+        const waitingForActionsField = `waitingForActions.${this.playerId}`
+        await updateDoc(this.gameRef, {
+          [waitingForActionsField]: false,
+        })
 
-      if (this.game?.mode === 'training') {
-        this.playerId = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
+        if (this.game?.mode === 'solo') {
+          await this.resolveAIActions()
+        }
+
+        if (this.game?.mode === 'training') {
+          this.playerId = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
+        }
+      } catch (error) {
+        console.error('Error processing actions:', error)
+      } finally {
+        this.isProcessing = false
       }
     },
     async handleActions(onlyNew = true) {
@@ -398,6 +419,14 @@ export default defineComponent({
       await updateDoc(this.gameRef, {
         [waitingForActionsField]: false,
       })
+    },
+    async replayRefresh() {
+      this.state = new State()
+      await this.initializeGame(this.game!.seed)
+    },
+    replayNextTurn() {
+      this.state.turn++
+      this.handleActions(true)
     },
   },
 })
@@ -588,6 +617,15 @@ body {
 
 .action-buttons {
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.action-buttons button {
+  margin: 0 10px; /* Add horizontal space between buttons */
 }
 
 button {
@@ -639,16 +677,9 @@ button:disabled {
   }
 }
 
-/* Optional: Force landscape mode using CSS */
-/* @media screen and (orientation: portrait) {
-  .game-layout {
-    transform: rotate(90deg);
-    transform-origin: left top;
-    width: 100vh;
-    height: 100vw;
-    position: absolute;
-    top: 100%;
-    left: 0;
-  }
-} */
+.loading-spinner {
+  display: inline-block;
+  margin-right: 8px;
+  animation: rotate 1s linear infinite;
+}
 </style>

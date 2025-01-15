@@ -6,10 +6,14 @@
         <button class="menu-button" @click="showCreateDialog = true">
           <span class="button-content">Create Game</span>
         </button>
+        <button class="menu-button" @click="showReplayDialog = true">
+          <span class="button-content">Replay a Game</span>
+        </button>
         <!-- Add more menu buttons here -->
       </nav>
     </div>
     <CreateGameDialog v-model="showCreateDialog" :createGame="handleGameCreate" />
+    <ReplayGameDialog v-model="showReplayDialog" />
   </div>
 </template>
 
@@ -23,6 +27,7 @@ import { Owner } from '@/game/Entity'
 import { logEvent } from 'firebase/analytics'
 import { firebaseAnalytics } from '@/infra/firebase'
 import CreateGameDialog from '@/components/CreateGameDialog.vue'
+import ReplayGameDialog from '@/components/ReplayGameDialog.vue'
 
 const seeds = [
   '-109498249532328380',
@@ -60,10 +65,13 @@ export default defineComponent({
   name: 'HomeView',
   components: {
     CreateGameDialog,
+    ReplayGameDialog,
   },
   data() {
     return {
       showCreateDialog: ref(false),
+      showReplayDialog: ref(false),
+      replayDialogError: null as string | null,
     }
   },
   methods: {

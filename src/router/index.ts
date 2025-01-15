@@ -5,6 +5,7 @@ import GameView from '../views/Game.vue'
 const routes = [
   { path: '/', name: 'home', component: HomeView },
   { path: '/game/:gameId/player/:playerUuid', name: 'game', component: GameView },
+  { path: '/replay/:gameId/player/:playerUuid', name: 'replay', component: GameView },
 ]
 
 const router = createRouter({
