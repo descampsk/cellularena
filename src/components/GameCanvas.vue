@@ -12,14 +12,7 @@
 </template>
 
 <script lang="ts">
-import {
-  Direction,
-  Entity,
-  EntityType,
-  getDxDyFromDirection,
-  Owner,
-  ProteinTypes,
-} from '@/game/Entity'
+import { Direction, Entity, EntityType, Owner, ProteinTypes } from '@/game/Entity'
 import { AllDxDy, getDirection } from '@/game/helpers'
 import { OrganTypes, State, type OrganType, type ProteinType } from '@/game/State'
 import { createImage } from '@/utils/imageLoader'
@@ -216,7 +209,7 @@ export default defineComponent({
           })
       } else {
         // Highlight cells where the player can grow from selected root
-        const growableCells = this.getGrowableCells(this.selectedRoot)
+        const growableCells = this.state.getGrowableCells(this.selectedRoot, this.playerId)
         growableCells.forEach(({ x, y }) => {
           this.drawHighlight(x, y, 'rgba(255, 255, 0, 0.2)')
         })
@@ -253,61 +246,6 @@ export default defineComponent({
           console.log(entity)
           this.drawEntity(entity, 0.5)
         })
-    },
-
-    getGrowableCells(root: Entity): Array<{ x: number; y: number }> {
-      const cells: Array<{ x: number; y: number }> = []
-
-      const organs = this.state.entities.filter(
-        (e) =>
-          e.owner === this.playerId &&
-          (e.organId === root.organId || e.organRootId === root.organId),
-      )
-
-      const directions = [
-        { dx: 0, dy: -1 },
-        { dx: 1, dy: 0 },
-        { dx: 0, dy: 1 },
-        { dx: -1, dy: 0 },
-      ]
-
-      organs.forEach((organ) => {
-        const { x, y } = organ
-        directions.forEach(({ dx, dy }) => {
-          const nx = x + dx
-          const ny = y + dy
-
-          if (nx >= 0 && nx < this.state.width && ny >= 0 && ny < this.state.height) {
-            const entity = this.state.getEntityAt({ x: nx, y: ny })
-            if (
-              [EntityType.EMPTY, ...ProteinTypes].includes(entity.type) &&
-              this.state.canGrowHere({ x: nx, y: ny }, this.playerId)
-            ) {
-              cells.push({ x: nx, y: ny })
-            }
-          }
-        })
-      })
-
-      const sporers = organs.filter((o) => o.type === EntityType.SPORER)
-      sporers.forEach((sporer) => {
-        const { x, y } = sporer
-        const [dx, dy] = getDxDyFromDirection(sporer.organDir)
-        let nx = x + dx
-        let ny = y + dy
-        while (nx >= 0 && nx < this.state.width && ny >= 0 && ny < this.state.height) {
-          const entity = this.state.getEntityAt({ x: nx, y: ny })
-          if ([EntityType.EMPTY, ...ProteinTypes].includes(entity.type)) {
-            cells.push({ x: nx, y: ny })
-            nx += dx
-            ny += dy
-            continue
-          }
-          break
-        }
-      })
-
-      return cells.filter((c, idx) => cells.findIndex((c1) => c1.x === c.x && c1.y === c.y) === idx)
     },
 
     setupMouseEvents() {
@@ -389,7 +327,9 @@ export default defineComponent({
       // If a root is selected and clicking on a growable cell
       if (
         this.selectedRoot &&
-        this.getGrowableCells(this.selectedRoot).some((cell) => cell.x === col && cell.y === row)
+        this.state
+          .getGrowableCells(this.selectedRoot, this.playerId)
+          .some((cell) => cell.x === col && cell.y === row)
       ) {
         this.popupX = col
         this.popupY = row

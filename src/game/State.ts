@@ -1,5 +1,5 @@
 import { getDirection } from './helpers'
-import { Direction, Entity, EntityType, Owner, ProteinTypes } from './Entity'
+import { Direction, Entity, EntityType, getDxDyFromDirection, Owner, ProteinTypes } from './Entity'
 import { type SimplePoint } from './Point'
 import { GrowAction, WaitAction, type SporeAction } from './Actions'
 
@@ -450,5 +450,60 @@ export class State {
     )
 
     return inputs
+  }
+
+  getGrowableCells(root: Entity, playerId: Owner): Array<{ x: number; y: number }> {
+    const cells: Array<{ x: number; y: number }> = []
+
+    const organs = this.entities.filter(
+      (e) => e.owner === playerId && (e.organId === root.organId || e.organRootId === root.organId),
+    )
+
+    const directions = [
+      { dx: 0, dy: -1 },
+      { dx: 1, dy: 0 },
+      { dx: 0, dy: 1 },
+      { dx: -1, dy: 0 },
+    ]
+
+    organs.forEach((organ) => {
+      const { x, y } = organ
+      directions.forEach(({ dx, dy }) => {
+        const nx = x + dx
+        const ny = y + dy
+
+        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+          const entity = this.getEntityAt({ x: nx, y: ny })
+          if (
+            [EntityType.EMPTY, ...ProteinTypes].includes(entity.type) &&
+            this.canGrowHere({ x: nx, y: ny }, playerId)
+          ) {
+            cells.push({ x: nx, y: ny })
+          }
+        }
+      })
+    })
+
+    const sporers = organs.filter((o) => o.type === EntityType.SPORER)
+    sporers.forEach((sporer) => {
+      const { x, y } = sporer
+      const [dx, dy] = getDxDyFromDirection(sporer.organDir)
+      let nx = x + dx
+      let ny = y + dy
+      while (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+        const entity = this.getEntityAt({ x: nx, y: ny })
+        if ([EntityType.EMPTY, ...ProteinTypes].includes(entity.type)) {
+          if (this.canGrowHere({ x: nx, y: ny }, playerId)) {
+            cells.push({ x: nx, y: ny })
+          }
+          nx += dx
+          ny += dy
+          continue
+        }
+        break
+      }
+    })
+
+    return cells.filter((c, idx) => cells.findIndex((c1) => c1.x === c.x && c1.y === c.y) === idx)
   }
 }
