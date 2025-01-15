@@ -22,10 +22,7 @@
             />
           </div>
           <div v-if="game" class="share-button-container">
-            <button v-if="game.mode === 'training'" @click="changePlayerId" class="share-button">
-              Change Player
-            </button>
-            <button v-else-if="game.mode === 'versus'" @click="copyShareLink" class="share-button">
+            <button v-if="game.mode === 'versus'" @click="copyShareLink" class="share-button">
               {{ copyStatus }}
             </button>
           </div>
@@ -265,6 +262,10 @@ export default defineComponent({
 
       if (this.game?.mode === 'solo') {
         this.resolveAIActions()
+      }
+
+      if (this.game?.mode === 'training') {
+        this.playerId = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
       }
     },
     async handleActions(onlyNew = true) {
