@@ -1,0 +1,37 @@
+name: CI
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  ci:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Install
+        run: npm ci
+
+      - name: test
+        run: npm run test
+
+      - name: Lint
+        run: npm run lint:check
+
+      - name: Check types
+        run: npm run type-check
+
+      - name: Build
+        run: doppler run -- npm run build
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_PROD }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
