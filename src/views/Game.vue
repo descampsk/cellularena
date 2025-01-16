@@ -190,6 +190,7 @@ export default defineComponent({
     this.playerId = game.playerIds[this.playerUuid]
 
     await this.initializeGame(game.seed)
+    await this.updateSerializedState()
 
     if (!this.isReplay) {
       this.state.turn = game.turn
@@ -201,7 +202,7 @@ export default defineComponent({
       this.state.turn = 1
     }
 
-    this.handleEndGame()
+    await this.handleEndGame()
 
     this.initialized = true
     console.log('Game initialized')
@@ -235,6 +236,7 @@ export default defineComponent({
         })
 
         await this.handleActions(true)
+        await this.updateSerializedState()
         this.handleEndGame()
       } else if (this.playerId === Owner.TWO && this.state.turn + 1 === newGame.turn) {
         console.log('Both players have submitted actions')
@@ -247,7 +249,7 @@ export default defineComponent({
         })
 
         await this.handleActions(true)
-        this.handleEndGame()
+        await this.handleEndGame()
       }
     },
   },
@@ -398,6 +400,14 @@ export default defineComponent({
         throw error
       }
     },
+    async updateSerializedState() {
+      const botPlayerId = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
+      const serializedState = this.state.createInputsForAI(botPlayerId).join('\n')
+
+      await updateDoc(this.gameRef, {
+        serializedState,
+      })
+    },
     async resolveAIActions() {
       if (!this.bot) {
         throw new Error('Bot is not initialized')
@@ -448,9 +458,12 @@ export default defineComponent({
         [waitingForActionsField]: false,
       })
     },
-    handleEndGame() {
+    async handleEndGame() {
       const winner = this.endGameChecker.checkWinner()
       if (winner !== null) {
+        await updateDoc(this.gameRef, {
+          winner,
+        })
         this.winner = winner
       }
     },
@@ -458,10 +471,10 @@ export default defineComponent({
       this.state = new State()
       await this.initializeGame(this.game!.seed)
     },
-    replayNextTurn() {
+    async replayNextTurn() {
       this.state.turn++
       this.handleActions(true)
-      this.handleEndGame()
+      await this.handleEndGame()
     },
   },
 })

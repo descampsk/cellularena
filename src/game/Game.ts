@@ -12,6 +12,8 @@ export class Game {
 
   public mode: GameMode = 'versus'
 
+  public serializedState: string = ''
+
   public playerIds: Record<string, Owner.ONE | Owner.TWO> = {
     [v4()]: Owner.ONE,
     [v4()]: Owner.TWO,
