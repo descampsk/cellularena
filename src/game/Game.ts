@@ -1,6 +1,7 @@
 import { v4 } from 'uuid'
 import { Owner } from './Entity'
 import type { FirestoreDataConverter, QueryDocumentSnapshot } from 'firebase/firestore'
+import { getRandomSeed } from './maps'
 
 export type GameMode = 'training' | 'versus' | 'solo'
 
@@ -34,9 +35,13 @@ export class Game {
 
   public turn = 1
 
+  public winner: Owner | null = null
+
+  public createdAt = new Date()
+
   constructor(game: Partial<Game>) {
-    this.seed = v4()
-    const { connectedPlayers, playerIds, seed, turn, waitingForActions, id, mode } = game
+    this.seed = getRandomSeed()
+    const { connectedPlayers, playerIds, seed, turn, waitingForActions, id, mode, winner } = game
     if (id) this.id = id
     if (connectedPlayers) this.connectedPlayers = connectedPlayers
     if (playerIds) this.playerIds = playerIds
@@ -44,6 +49,7 @@ export class Game {
     if (turn) this.turn = turn
     if (waitingForActions) this.waitingForActions = waitingForActions
     if (mode) this.mode = mode
+    if (winner) this.winner = winner
   }
 }
 

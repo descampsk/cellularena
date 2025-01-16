@@ -124,6 +124,7 @@ export class State {
   }
 
   public refreshState(inputs: string[]) {
+    console.debug('refreshState', inputs)
     this.entities = []
 
     this.grid = new Array<Entity>(this.height * this.width).fill(
@@ -164,6 +165,7 @@ export class State {
     this.requiredActionsCount = parseInt(inputs.shift()!)
 
     this.refreshProteins()
+    console.debug('refreshState')
   }
 
   public canGrowHere(point: SimplePoint, owner: Owner): boolean {

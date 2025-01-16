@@ -1,6 +1,16 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="game-layout">
+    <!-- Add winner dialog -->
+    <WinnerDialog
+      v-if="game && winner !== null"
+      :show="winner !== null"
+      :scorePerPlayer="scorePerPlayer"
+      :winner="winner"
+      :game="game"
+      :playerId="playerId"
+    />
+
     <!-- Add rotation overlay -->
     <div v-if="needsRotation" class="rotation-overlay">
       <div class="rotation-content">
@@ -88,11 +98,14 @@ import PlayerInfo from '@/components/PlayerInfo.vue'
 import GameCanvas from '@/components/GameCanvas.vue'
 import { logEvent } from 'firebase/analytics'
 import type { Bot } from '@/bots/bots'
+import { EndGameChecker } from '@/game/EndGameChecker'
+import WinnerDialog from '@/components/WinnerDialog.vue'
 
 export default defineComponent({
   components: {
     PlayerInfo,
     GameCanvas,
+    WinnerDialog,
   },
   data() {
     const db = getFirestore(firebaseApp)
@@ -107,6 +120,8 @@ export default defineComponent({
       actionFirestoreConvertor,
     )
 
+    const state = new State()
+
     return {
       initialized: false,
       isReplay,
@@ -116,7 +131,8 @@ export default defineComponent({
       actionsRef,
       playerUuid,
       playerId: Owner.ONE as Owner.ONE | Owner.TWO,
-      state: new State(),
+      state,
+      endGameChecker: new EndGameChecker(state),
       bot: null as Bot | null,
       isPaused: true,
       actionText: '',
@@ -125,6 +141,7 @@ export default defineComponent({
       copyStatus: 'Share Link',
       needsRotation: false,
       isProcessing: false,
+      winner: null as Owner | null,
     }
   },
   computed: {
@@ -154,6 +171,9 @@ export default defineComponent({
 
       return tmpProteinsPerPlayer
     },
+    scorePerPlayer(): Record<Owner.ONE | Owner.TWO, number> {
+      return this.endGameChecker.getScorePerPlayer()
+    },
   },
   async mounted() {
     const db = useFirestore()
@@ -181,7 +201,10 @@ export default defineComponent({
       this.state.turn = 1
     }
 
+    this.handleEndGame()
+
     this.initialized = true
+    console.log('Game initialized')
 
     this.checkOrientation()
     window.addEventListener('resize', this.checkOrientation)
@@ -212,6 +235,7 @@ export default defineComponent({
         })
 
         await this.handleActions(true)
+        this.handleEndGame()
       } else if (this.playerId === Owner.TWO && this.state.turn + 1 === newGame.turn) {
         console.log('Both players have submitted actions')
 
@@ -223,12 +247,14 @@ export default defineComponent({
         })
 
         await this.handleActions(true)
+        this.handleEndGame()
       }
     },
   },
   methods: {
     async initializeGame(seed: string) {
       const inputs = await this.loadMap(seed)
+      console.log('Map loaded')
       this.state.setMapSize(inputs.shift()!)
       this.state.refreshState(inputs)
     },
@@ -290,6 +316,7 @@ export default defineComponent({
       }
     },
     async handleActions(onlyNew = true) {
+      console.debug('Handling actions')
       const actionDocs = await getDocs(this.actionsRef)
       const newActions = actionDocs.docs
         .map((d) => d.data())
@@ -322,6 +349,7 @@ export default defineComponent({
         }
         this.state.refreshAfterActions()
       }
+      console.debug('Actions handled')
       this.registredActionsPerRoot = {}
     },
     addActionToRoot(action: GrowAction | SporeAction, rootId: number) {
@@ -420,6 +448,12 @@ export default defineComponent({
         [waitingForActionsField]: false,
       })
     },
+    handleEndGame() {
+      const winner = this.endGameChecker.checkWinner()
+      if (winner !== null) {
+        this.winner = winner
+      }
+    },
     async replayRefresh() {
       this.state = new State()
       await this.initializeGame(this.game!.seed)
@@ -427,6 +461,7 @@ export default defineComponent({
     replayNextTurn() {
       this.state.turn++
       this.handleActions(true)
+      this.handleEndGame()
     },
   },
 })
