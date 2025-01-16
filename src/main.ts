@@ -1,5 +1,7 @@
 import * as Sentry from '@sentry/vue'
 
+import './styles/globals.css'
+
 import { VueFire, VueFireAuth } from 'vuefire'
 import { firebaseApp } from './infra/firebase'
 
