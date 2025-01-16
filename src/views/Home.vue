@@ -99,6 +99,7 @@ export default defineComponent({
   background: url('../assets/background.jpg') no-repeat center center fixed;
   background-size: cover;
   position: relative;
+  padding: 1rem;
 }
 
 .home::before {
@@ -118,8 +119,8 @@ export default defineComponent({
 }
 
 .logo {
-  max-width: 400px;
-  margin-bottom: 4rem;
+  max-width: min(400px, 80vw);
+  margin-bottom: 2rem;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
   animation: glow 2s ease-in-out infinite alternate;
 }
@@ -129,18 +130,21 @@ export default defineComponent({
   flex-direction: column;
   gap: 1rem;
   align-items: center;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 .menu-button {
   background: transparent;
   border: 2px solid #4caf50;
   color: #4caf50;
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
+  padding: 0.8rem 1.5rem;
+  font-size: clamp(1rem, 3vw, 1.2rem);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 200px;
+  width: min(200px, 80vw);
   position: relative;
   overflow: hidden;
 }
@@ -177,6 +181,54 @@ export default defineComponent({
   }
   to {
     filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .home {
+    padding: 0.5rem;
+  }
+
+  .logo {
+    margin-bottom: 1.5rem;
+  }
+
+  .menu {
+    gap: 0.8rem;
+  }
+
+  .menu-button {
+    padding: 0.6rem 1.2rem;
+  }
+}
+
+/* Landscape mode on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .home {
+    padding: 0.5rem 2rem;
+  }
+
+  .content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2rem;
+    justify-content: center;
+  }
+
+  .logo {
+    max-width: min(300px, 40vw);
+    margin-bottom: 0;
+  }
+
+  .menu {
+    gap: 0.5rem;
+  }
+
+  .menu-button {
+    padding: 0.4rem 1rem;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
   }
 }
 </style>

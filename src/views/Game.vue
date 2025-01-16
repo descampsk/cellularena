@@ -46,10 +46,10 @@
             />
           </div>
         </div>
-        <div id="infoDisplay" class="info-display">Hover over a cell to see its details</div>
+        <!-- <div id="infoDisplay" class="info-display">Hover over a cell to see its details</div> -->
       </div>
 
-      <div v-if="game" class="main-section">
+      <div v-if="game && initialized" class="main-section">
         <div class="canvas-wrapper">
           <GameCanvas
             :state="state"
@@ -63,15 +63,20 @@
         </div>
       </div>
       <div v-if="!isReplay" class="action-buttons">
-        <button v-if="canSubmitActions" @click="processActions" :disabled="isProcessing">
+        <button
+          class="share-button"
+          v-if="canSubmitActions"
+          @click="processActions"
+          :disabled="isProcessing"
+        >
           <span v-if="isProcessing" class="loading-spinner">⟳</span>
           {{ isProcessing ? 'Processing...' : 'Apply Actions' }}
         </button>
-        <button v-else disabled>Waiting for the other player</button>
+        <button class="share-button" v-else disabled>Waiting for the other player</button>
       </div>
       <div v-else class="action-buttons">
-        <button @click="replayRefresh">Refresh</button>
-        <button @click="replayNextTurn">Next Turn</button>
+        <button class="share-button" @click="replayRefresh">Refresh</button>
+        <button class="share-button" @click="replayNextTurn">Next Turn</button>
       </div>
     </div>
   </div>
@@ -492,35 +497,6 @@ body {
   background-color: white;
 }
 
-.players-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center; /* Ajoute un alignement vertical */
-  margin: 0 auto 20px;
-  max-width: 1000px; /* Augmente la largeur pour mieux espacer */
-  position: relative;
-}
-
-.player-info {
-  padding: 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #ffffff; /* Blanc pour un meilleur contraste */
-  color: #333; /* Texte plus sombre */
-  min-width: 200px;
-  text-align: center; /* Centre le contenu */
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Ajoute un effet d'ombre */
-}
-
-.game-container {
-  display: flex;
-  justify-content: center; /* Centrer tout le contenu horizontalement */
-  align-items: flex-start;
-  gap: 20px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
 .actions-panel {
   flex: 0 0 300px; /* Largeur fixe pour le panneau d'actions */
   margin-left: 0px;
@@ -559,17 +535,14 @@ body {
 }
 
 .game-layout {
-  background-color: white;
+  background: url('../assets/background.jpg') no-repeat center center fixed;
   min-height: 100vh;
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
   -webkit-box-orient: vertical;
   -webkit-box-direction: normal;
   -ms-flex-direction: column;
   flex-direction: column;
   min-height: 100vh;
-  padding: 20px;
 }
 
 .info-section {
@@ -578,23 +551,17 @@ body {
 }
 
 .players-container {
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-box-pack: justify;
-  -ms-flex-pack: justify;
   justify-content: space-between;
-  -webkit-box-align: center;
-  -ms-flex-align: center;
   align-items: center;
   max-width: 1200px;
-  margin: 0 auto 30px; /* Added bottom margin */
+  margin: 0 auto 2%; /* Added bottom margin */
   position: relative;
 }
 
 .left-player,
 .right-player {
-  flex: 0 0 300px;
+  flex: 0 0 250px;
 }
 
 .info-display {
@@ -603,35 +570,22 @@ body {
   transform: translateX(-50%);
   text-align: center;
   font-family: Arial, sans-serif;
-  font-size: 14px;
-  color: #333;
+  font-size: 50%;
+  color: rgb(155, 16, 16);
   white-space: nowrap;
 }
 
 .main-section {
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-box-pack: center;
-  -ms-flex-pack: center;
   justify-content: center;
-  -webkit-box-align: start;
-  -ms-flex-align: start;
   align-items: flex-start;
-  gap: 20px;
-  -webkit-box-flex: 1;
-  -ms-flex: 1;
+  gap: 3%;
   flex: 1;
 }
 
 .canvas-wrapper {
   flex: 0 1 auto;
   position: relative;
-}
-
-#gameCanvas {
-  display: block;
-  margin: 0;
 }
 
 .share-button-container {
@@ -656,11 +610,12 @@ body {
 }
 
 .top-section {
-  margin-bottom: 50px; /* Increased from 20px */
+  margin-bottom: 1%;
 }
 
 .game-area {
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0);
+  padding: 2%;
 }
 
 .action-buttons {
@@ -669,7 +624,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 2%;
 }
 
 .action-buttons button {
@@ -677,13 +632,13 @@ body {
 }
 
 button {
-  padding: 8px 16px;
+  padding: 1% 2%;
   border-radius: 4px;
   border: none;
   background-color: #4caf50;
   color: white;
   cursor: pointer;
-  -webkit-transition: background-color 0.3s;
+  font-size: 85%;
   transition: background-color 0.3s;
 }
 
@@ -729,5 +684,15 @@ button:disabled {
   display: inline-block;
   margin-right: 8px;
   animation: rotate 1s linear infinite;
+}
+
+@media (max-width: 1300px) {
+  button {
+    font-size: 10px;
+  }
+
+  .share-button {
+    padding: 4px 8px;
+  }
 }
 </style>

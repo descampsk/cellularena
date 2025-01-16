@@ -1,0 +1,20 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+body {
+  min-height: 100vh;
+  /* Prevent scrolling when content fits */
+  overflow-y: auto;
+}
+
+/* Ensure main content container doesn't force scrolling */
+#__next {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

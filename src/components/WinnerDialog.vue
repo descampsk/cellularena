@@ -111,33 +111,44 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
 .dialog-content {
-  background: rgba(255, 255, 255, 0);
-  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: clamp(1rem, 3vw, 2rem);
   border-radius: 8px;
   text-align: center;
-  max-width: 500px;
-  width: 90%;
+  width: min(90%, 500px);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .logo {
-  max-width: 300px;
-  margin-bottom: 2rem;
+  width: min(80%, 300px);
+  height: auto;
+  margin: 0 auto;
+}
+
+.winner-announcement {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: bold;
+  margin: 0;
+  text-transform: uppercase;
 }
 
 .scores {
-  margin: 2rem 0;
+  margin: 0.5rem 0;
 }
 
 .score-line {
   display: flex;
   justify-content: space-between;
-  margin: 1rem 0;
+  margin: 0.5rem 0;
   padding: 0.5rem;
   border-radius: 4px;
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 3vw, 1.2rem);
 }
 
 .player {
@@ -147,9 +158,11 @@ export default defineComponent({
 .blue {
   color: #2196f3;
 }
-
 .red {
   color: #f44336;
+}
+.draw {
+  color: #757575;
 }
 
 .points {
@@ -158,34 +171,96 @@ export default defineComponent({
 
 .actions {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   justify-content: center;
-  margin-top: 2rem;
+  margin-top: 0.5rem;
 }
 
 .action-button {
-  padding: 0.8rem 1.5rem;
+  padding: clamp(0.5rem, 2vw, 0.8rem) clamp(1rem, 3vw, 1.5rem);
   border: none;
   border-radius: 4px;
   background: #4caf50;
   color: white;
   font-weight: 500;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
   cursor: pointer;
   transition: background-color 0.3s;
+  min-width: clamp(80px, 20vw, 120px);
 }
 
 .action-button:hover {
   background: #45a049;
 }
 
-.winner-announcement {
-  font-size: 2rem;
-  font-weight: bold;
-  margin: 1rem 0;
-  text-transform: uppercase;
+/* Landscape mode adaptations */
+@media (max-height: 600px) and (orientation: landscape) {
+  .dialog-content {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .logo {
+    width: min(30%, 200px);
+    margin: 0;
+  }
+
+  .winner-announcement {
+    flex: 1;
+    min-width: 200px;
+    text-align: left;
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
+  }
+
+  .scores {
+    width: 100%;
+    margin: 0;
+  }
+
+  .score-line {
+    margin: 0.25rem 0;
+    padding: 0.25rem;
+  }
+
+  .actions {
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+
+  .action-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
 }
 
-.draw {
-  color: #757575;
+/* Very small screens */
+@media (max-width: 360px), (max-height: 400px) {
+  .dialog-content {
+    padding: 0.75rem;
+    gap: 0.25rem;
+  }
+
+  .logo {
+    width: 70%;
+  }
+
+  .winner-announcement {
+    font-size: 1.2rem;
+  }
+
+  .score-line {
+    font-size: 0.9rem;
+    padding: 0.25rem;
+  }
+
+  .action-button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    min-width: 70px;
+  }
 }
 </style>

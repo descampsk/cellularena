@@ -22,6 +22,7 @@ import { Game } from '@/game/Game'
 import { GrowAction, SporeAction } from '@/game/Actions'
 import { logEvent } from 'firebase/analytics'
 import { firebaseAnalytics } from '@/infra/firebase'
+import { useResponsiveGrid } from '@/composables/useResponsiveGrid'
 
 const directionToRotation: Record<Direction, number> = {
   [Direction.E]: 0,
@@ -30,8 +31,6 @@ const directionToRotation: Record<Direction, number> = {
   [Direction.S]: Math.PI / 2,
   [Direction.X]: 0,
 }
-
-const CELL_SIZE = 48
 
 export default defineComponent({
   components: {
@@ -67,6 +66,18 @@ export default defineComponent({
       required: true,
     },
   },
+  setup(props) {
+    const { cellSize, canvasWidth, canvasHeight } = useResponsiveGrid(
+      props.state.width,
+      props.state.height,
+    )
+
+    return {
+      cellSize,
+      canvasWidth,
+      canvasHeight,
+    }
+  },
   data() {
     return {
       canvas: null as HTMLCanvasElement | null,
@@ -80,6 +91,7 @@ export default defineComponent({
       backgroundImage: null as HTMLImageElement | null,
     }
   },
+
   async mounted() {
     this.canvas = this.$refs.gameCanvas as HTMLCanvasElement
     this.ctx = this.canvas.getContext('2d')
@@ -90,6 +102,11 @@ export default defineComponent({
     await this.loadImages()
     this.drawGrid()
     this.setupMouseEvents()
+
+    window.addEventListener('resize', this.drawGrid)
+  },
+  unmounted() {
+    window.removeEventListener('resize', this.drawGrid)
   },
   watch: {
     state: {
@@ -137,8 +154,10 @@ export default defineComponent({
     drawGrid() {
       if (!this.ctx || !this.canvas) return
 
-      this.canvas.width = this.state.width * CELL_SIZE
-      this.canvas.height = this.state.height * CELL_SIZE
+      console.log('Drawing grid', this.canvasWidth, this.canvasHeight)
+
+      this.canvas.width = this.canvasWidth
+      this.canvas.height = this.canvasHeight
 
       const ctx = this.ctx
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
@@ -153,12 +172,12 @@ export default defineComponent({
       // Draw base grid
       for (let row = 0; row < this.state.height; row++) {
         for (let col = 0; col < this.state.width; col++) {
-          const x = col * CELL_SIZE
-          const y = row * CELL_SIZE
+          const x = col * this.cellSize
+          const y = row * this.cellSize
 
           // Draw cell border
           ctx.strokeStyle = 'black'
-          ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE)
+          ctx.strokeRect(x, y, this.cellSize, this.cellSize)
         }
       }
 
@@ -175,8 +194,8 @@ export default defineComponent({
     drawEntity(entity: Entity, opacity = 1.0) {
       if (!this.ctx) return
 
-      const x = entity.x * CELL_SIZE
-      const y = entity.y * CELL_SIZE
+      const x = entity.x * this.cellSize
+      const y = entity.y * this.cellSize
       const img =
         entity.owner === Owner.ONE ? this.myImages[entity.type] : this.oppImages[entity.type]
       const rotation = directionToRotation[entity.organDir]
@@ -184,11 +203,17 @@ export default defineComponent({
       if (img) {
         this.ctx.save()
         this.ctx.globalAlpha = opacity // Adjust opacity if needed
-        this.ctx.translate(x + CELL_SIZE / 2, y + CELL_SIZE / 2)
+        this.ctx.translate(x + this.cellSize / 2, y + this.cellSize / 2)
         if (rotation !== 0) {
           this.ctx.rotate(rotation)
         }
-        this.ctx.drawImage(img, -CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE)
+        this.ctx.drawImage(
+          img,
+          -this.cellSize / 2,
+          -this.cellSize / 2,
+          this.cellSize,
+          this.cellSize,
+        )
         this.ctx.restore()
       }
     },
@@ -219,7 +244,7 @@ export default defineComponent({
     drawHighlight(x: number, y: number, color: string) {
       if (!this.ctx) return
       this.ctx.fillStyle = color
-      this.ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+      this.ctx.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize)
     },
 
     drawRegisteredActions() {
@@ -253,11 +278,14 @@ export default defineComponent({
 
       this.canvas.addEventListener('mousemove', (event) => {
         const rect = this.canvas!.getBoundingClientRect()
-        const mouseX = event.clientX - rect.left
-        const mouseY = event.clientY - rect.top
+        const scale = this.canvas!.width / rect.width // Calcul du ratio d'échelle
 
-        const col = Math.floor(mouseX / CELL_SIZE)
-        const row = Math.floor(mouseY / CELL_SIZE)
+        // Appliquer le ratio d'échelle aux coordonnées de la souris
+        const mouseX = (event.clientX - rect.left) * scale
+        const mouseY = (event.clientY - rect.top) * scale
+
+        const col = Math.floor(mouseX / this.cellSize)
+        const row = Math.floor(mouseY / this.cellSize)
 
         if (col >= 0 && col < this.state.width && row >= 0 && row < this.state.height) {
           const entity = this.state.entities.find((e) => e.x === col && e.y === row)
@@ -290,17 +318,23 @@ export default defineComponent({
       }
 
       const rect = this.canvas!.getBoundingClientRect()
+      // const scale = this.canvas!.width / rect.width // Calcul du ratio d'échelle
+
+      // Appliquer le ratio d'échelle aux coordonnées de la souris
       const mouseX = event.clientX - rect.left
       const mouseY = event.clientY - rect.top
 
-      const col = Math.floor(mouseX / CELL_SIZE)
-      const row = Math.floor(mouseY / CELL_SIZE)
+      const col = Math.floor(mouseX / this.cellSize)
+      const row = Math.floor(mouseY / this.cellSize)
+
+      console.log(col, row, mouseX, mouseY)
 
       if (col < 0 || col >= this.state.width || row < 0 || row >= this.state.height) {
         return
       }
 
       const entity = this.state.getEntityAt({ x: col, y: row })
+      console.log(entity)
 
       // Checking if we click to remove an action
       for (const [rootId, action] of Object.entries(this.registredActionsPerRoot)) {
@@ -441,6 +475,6 @@ export default defineComponent({
 canvas {
   border: 1px solid black;
   display: block;
-  margin: 20px auto;
+  margin: auto;
 }
 </style>
