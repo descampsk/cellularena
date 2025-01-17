@@ -2,8 +2,14 @@ import { v4 } from 'uuid'
 import { Owner } from './Entity'
 import type { FirestoreDataConverter, QueryDocumentSnapshot } from 'firebase/firestore'
 import { getRandomSeed } from './maps'
+import type { BotName } from './Bot'
 
 export type GameMode = 'training' | 'versus' | 'solo'
+
+export type GameSettings = {
+  mode: GameMode
+  botName: BotName | null
+}
 
 export class Game {
   public id = v4()
@@ -11,6 +17,8 @@ export class Game {
   public seed: string
 
   public mode: GameMode = 'versus'
+
+  public botName: BotName | null = null
 
   public serializedState: string = ''
 
@@ -43,7 +51,17 @@ export class Game {
 
   constructor(game: Partial<Game>) {
     this.seed = getRandomSeed()
-    const { connectedPlayers, playerIds, seed, turn, waitingForActions, id, mode, winner } = game
+    const {
+      connectedPlayers,
+      playerIds,
+      seed,
+      turn,
+      waitingForActions,
+      id,
+      mode,
+      winner,
+      botName,
+    } = game
     if (id) this.id = id
     if (connectedPlayers) this.connectedPlayers = connectedPlayers
     if (playerIds) this.playerIds = playerIds
@@ -52,6 +70,7 @@ export class Game {
     if (waitingForActions) this.waitingForActions = waitingForActions
     if (mode) this.mode = mode
     if (winner) this.winner = winner
+    if (botName) this.botName = botName
   }
 }
 

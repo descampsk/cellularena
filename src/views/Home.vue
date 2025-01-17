@@ -22,7 +22,7 @@ import { defineComponent, ref } from 'vue'
 import { useFirestore } from 'vuefire'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { v4 as uuidv4 } from 'uuid'
-import { Game, gameFirestoreConvertor } from '@/game/Game'
+import { Game, gameFirestoreConvertor, type GameSettings } from '@/game/Game'
 import { Owner } from '@/game/Entity'
 import { logEvent } from 'firebase/analytics'
 import { firebaseAnalytics } from '@/infra/firebase'
@@ -44,7 +44,7 @@ export default defineComponent({
     }
   },
   methods: {
-    async handleGameCreate(settings: { mode: 'versus' | 'solo' | 'training' }) {
+    async handleGameCreate(settings: GameSettings) {
       this.showCreateDialog = false
 
       const db = useFirestore()
@@ -59,6 +59,7 @@ export default defineComponent({
           [playerTwoUuid]: Owner.TWO,
         },
         mode: settings.mode,
+        botName: settings.mode === 'solo' ? settings.botName : null,
       })
 
       logEvent(firebaseAnalytics, 'create_game', {

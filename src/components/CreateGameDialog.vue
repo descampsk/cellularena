@@ -23,9 +23,46 @@
             </span>
           </div>
         </div>
+
+        <!-- New bot selection -->
+        <div v-if="settings.mode === 'solo'" class="form-group">
+          <label class="select-label">Select Bot</label>
+          <div class="select-wrapper">
+            <select v-model="settings.botName">
+              <option v-for="name in availableBots" :key="name" :value="name">
+                {{ name }} (ELO: {{ Bots[name].elo }})
+              </option>
+            </select>
+            <span v-if="settings.botName" class="info-icon"
+              >ⓘ
+              <div class="tooltip bot-tooltip">
+                <div class="bot-info">
+                  <div class="bot-description">{{ Bots[settings.botName].description }}</div>
+                  <div class="bot-availability">
+                    <span
+                      :class="[
+                        'availability-badge',
+                        Bots[settings.botName].availibility.toLowerCase(),
+                      ]"
+                    >
+                      {{ Bots[settings.botName].availibility }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </span>
+          </div>
+        </div>
+
         <div class="dialog-buttons">
           <button class="cancel-button" @click="close">Cancel</button>
-          <button class="create-button" @click="createGame(settings)">Create</button>
+          <button
+            class="create-button"
+            @click="createGame(settings)"
+            :disabled="settings.mode === 'solo' && !settings.botName"
+          >
+            Create
+          </button>
         </div>
       </div>
     </div>
@@ -33,8 +70,10 @@
 </template>
 
 <script lang="ts">
-import type { GameMode } from '@/game/Game'
-import { defineComponent, ref, type PropType } from 'vue'
+import { BotNames, Bots, type BotName } from '@/game/Bot'
+import type { GameMode, GameSettings } from '@/game/Game'
+import { defineComponent, ref, computed, type PropType } from 'vue'
+import { useRoute } from 'vue-router'
 
 export default defineComponent({
   name: 'CreateGameDialog',
@@ -44,14 +83,24 @@ export default defineComponent({
       required: true,
     },
     createGame: {
-      type: Function as PropType<(settings: { mode: GameMode }) => void>,
+      type: Function as PropType<(settings: GameSettings) => void>,
       required: true,
     },
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
+    const route = useRoute()
     const settings = ref({
       mode: 'versus' as GameMode,
+      botName: 'Apofils' as BotName | null,
+    })
+
+    const availableBots = computed(() => {
+      const availability = route.query.availability as string | undefined
+      return BotNames.filter((name) => {
+        const bot = Bots[name]
+        return bot.availibility === 'GA' || availability?.toUpperCase() === 'ALPHA'
+      })
     })
 
     const close = () => {
@@ -61,6 +110,8 @@ export default defineComponent({
     return {
       settings,
       close,
+      Bots,
+      availableBots,
     }
   },
 })
@@ -275,5 +326,65 @@ button {
 .dialog-enter-from,
 .dialog-leave-to {
   opacity: 0;
+}
+
+/* New styles for bot selection */
+.bot-tooltip {
+  min-width: 200px;
+}
+
+.bot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bot-description {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.bot-availability {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.availability-badge {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.availability-badge.ga {
+  background-color: #4caf50;
+  color: white;
+}
+
+.availability-badge.alpha {
+  background-color: #ff9800;
+  color: black;
+}
+
+/* Responsive adjustments for bot selection */
+@media (max-width: 768px) {
+  .bot-tooltip {
+    min-width: 150px;
+  }
+
+  .bot-description {
+    font-size: 0.8rem;
+  }
+
+  .availability-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .bot-tooltip {
+    width: 180px;
+  }
 }
 </style>
