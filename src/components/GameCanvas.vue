@@ -238,6 +238,13 @@ export default defineComponent({
         growableCells.forEach(({ x, y }) => {
           this.drawHighlight(x, y, 'rgba(255, 255, 0, 0.2)')
         })
+
+        // Highlight cell clicked for action
+        if (this.popupX && this.popupY) {
+          const color =
+            this.playerId === Owner.ONE ? 'rgba(0, 0, 255, 0.9)' : 'rgba(255, 0, 0, 0.9)'
+          this.drawHighlight(this.popupX, this.popupY, color)
+        }
       }
     },
 
@@ -368,6 +375,7 @@ export default defineComponent({
         this.popupX = col
         this.popupY = row
         this.popupVisible = true
+        this.drawGrid()
       } else if (this.selectedRoot) {
         this.selectedRoot = null
         this.popupVisible = false

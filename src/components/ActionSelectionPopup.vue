@@ -1,15 +1,18 @@
 <template>
   <div class="popup" v-if="visible" @click.self="closePopup">
     <div class="popup-content">
-      <h3>Select Action in {{ x }}, {{ y }}</h3>
       <div v-for="organ in organTypes" :key="organ">
         <div v-if="isDirectional(organ)">
-          <div
-            style="display: flex; flex-direction: row; justify-content: center; align-items: center"
-          >
-            {{ organ }}
-            <!-- <img src="../assets/a.png" style="width: 20px; height: 20px" /> -->
-            <!-- <img src="../assets/b.png" style="width: 20px; height: 20px" /> -->
+          <div class="organ-header">
+            <span class="organ-name">{{ organ }}</span>
+            <div class="protein-requirements">
+              <img
+                v-for="protein in proteinsImagePerOrgan[organ as OrganType]"
+                :key="protein"
+                :src="getProteinImage(protein)"
+                class="protein-icon"
+              />
+            </div>
           </div>
           <div class="organs">
             <img
@@ -22,7 +25,17 @@
           </div>
         </div>
         <div v-else>
-          <div>{{ organ }}</div>
+          <div class="organ-header">
+            <span class="organ-name">{{ organ }}</span>
+            <div class="protein-requirements">
+              <img
+                v-for="protein in proteinsImagePerOrgan[organ as OrganType]"
+                :key="protein"
+                :src="getProteinImage(protein)"
+                class="protein-icon"
+              />
+            </div>
+          </div>
           <div class="organs">
             <img
               :src="getImage(organ)"
@@ -32,7 +45,6 @@
           </div>
         </div>
       </div>
-      <button @click="closePopup">Cancel</button>
     </div>
   </div>
 </template>
@@ -86,6 +98,17 @@ export default defineComponent({
       directions: [Direction.N, Direction.E, Direction.S, Direction.W],
     }
   },
+  computed: {
+    proteinsImagePerOrgan(): Record<OrganType, string[]> {
+      return {
+        [EntityType.BASIC]: ['a'],
+        [EntityType.ROOT]: ['a', 'b', 'c', 'd'],
+        [EntityType.HARVESTER]: ['c', 'd'],
+        [EntityType.TENTACLE]: ['b', 'c'],
+        [EntityType.SPORER]: ['b', 'd'],
+      }
+    },
+  },
   methods: {
     hasEnoughProteins(organ: OrganType): boolean {
       const cost = ProteinsPerOrgan[organ]
@@ -111,6 +134,9 @@ export default defineComponent({
 
       return image.default
     },
+    getProteinImage(protein: string): string {
+      return new URL(`../assets/${protein.toLowerCase()}.png`, import.meta.url).href
+    },
     getStyle(organ: OrganType, direction: Direction): StyleValue {
       const rotationDegrees = {
         [Direction.X]: 0,
@@ -125,8 +151,8 @@ export default defineComponent({
 
       return {
         transform: `rotate(${rotationDegrees[direction]}deg)`,
-        width: '30px',
-        height: '30px',
+        // width: 'clamp(6px, 6vw, 32px)',
+        // height: 'clamp(6px, 6vw, 32px)',
         filter: grayscale,
         cursor: enoughProteins ? 'pointer' : undefined,
       }
@@ -147,61 +173,75 @@ export default defineComponent({
 <style>
 .popup {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-.popup::before {
-  content: '';
-  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.9);
-  z-index: -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .popup-content {
-  padding: 20px;
+  padding: min(8px, 2vw);
   text-align: center;
+  border-radius: min(12px, 2vw);
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  max-width: min(70vw, 360px);
+  font-size: clamp(12px, 1.5vw, 14px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.organs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: min(8px, 1vw);
+  margin: min(4px, 1vw) 0;
 }
 
 .organs img {
-  margin: 5px;
+  width: clamp(10px, 3vw, 32px);
+  height: clamp(10px, 3vw, 32px);
+  padding: clamp(3px, 0.75vw, 6px);
+  border-radius: min(6px, 1vw);
+  background-color: rgba(124, 46, 46, 0.781);
+  transition: all 0.2s ease;
 }
 
-img {
-  -webkit-transition: transform 0.3s ease;
-  transition: transform 0.3s ease;
+.organs img:hover {
+  transform: scale(1.1);
+  background-color: rgba(255, 255, 255, 0.25);
 }
 
 .organ-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 5px;
+  justify-content: center;
+  gap: min(8px, 1vw);
+  margin: min(4px, 1vh) 0;
 }
 
-.protein-costs {
+.protein-requirements {
   display: flex;
-  gap: 4px;
+  gap: min(4px, 0.5vw);
+  align-items: center;
 }
 
 .protein-icon {
-  width: 20px;
-  height: 20px;
-  opacity: 0.3;
-  transition: opacity 0.3s ease;
+  width: clamp(8px, 2vh, 16px);
+  height: clamp(8px, 2vh, 16px);
+  object-fit: contain;
 }
 
-.protein-icon.required {
-  opacity: 1;
+.organ-name {
+  font-size: clamp(10px, 2vh, 14px);
+  margin: min(4px, 1vh) 0;
+  color: #130606;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 </style>
