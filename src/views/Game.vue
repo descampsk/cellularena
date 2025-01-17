@@ -309,7 +309,7 @@ export default defineComponent({
           [waitingForActionsField]: false,
         })
 
-        if (this.game?.mode === 'solo') {
+        if (this.game?.mode === 'solo' && this.game.botName !== 'reCurse') {
           await this.resolveAIActions()
         }
 
