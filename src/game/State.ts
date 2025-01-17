@@ -124,7 +124,6 @@ export class State {
   }
 
   public refreshState(inputs: string[]) {
-    console.debug('refreshState', inputs)
     this.entities = []
 
     this.grid = new Array<Entity>(this.height * this.width).fill(
@@ -165,7 +164,22 @@ export class State {
     this.requiredActionsCount = parseInt(inputs.shift()!)
 
     this.refreshProteins()
-    console.debug('refreshState')
+  }
+
+  public checkYSymmetry(): boolean {
+    for (let x = 0; x < this.width; x++) {
+      for (let y = 0; y < this.height; y++) {
+        const entity = this.getEntityAt({ x, y })
+        const entitySym = this.getEntityAt({ x: this.width - x - 1, y: this.height - y - 1 })
+        if (entity.type !== entitySym.type) {
+          console.debug('Not symmetrical at', x, y)
+          return false
+        }
+      }
+    }
+
+    console.debug('The map is Y-symmetrical')
+    return true
   }
 
   public canGrowHere(point: SimplePoint, owner: Owner): boolean {

@@ -22,6 +22,8 @@ export class Game {
 
   public serializedState: string = ''
 
+  public isMapYSymmetrical = false
+
   public playerIds: Record<string, Owner.ONE | Owner.TWO> = {
     [v4()]: Owner.ONE,
     [v4()]: Owner.TWO,
@@ -71,6 +73,8 @@ export class Game {
     if (mode) this.mode = mode
     if (winner) this.winner = winner
     if (botName) this.botName = botName
+    if (game.serializedState) this.serializedState = game.serializedState
+    if (game.isMapYSymmetrical) this.isMapYSymmetrical = game.isMapYSymmetrical
   }
 }
 

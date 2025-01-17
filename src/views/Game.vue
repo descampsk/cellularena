@@ -196,6 +196,10 @@ export default defineComponent({
 
     await this.initializeGame(game.seed)
     await this.updateSerializedState()
+    const isMapYSymmetrical = this.state.checkYSymmetry()
+    await updateDoc(this.gameRef, {
+      isMapYSymmetrical,
+    })
 
     if (!this.isReplay) {
       this.state.turn = game.turn
