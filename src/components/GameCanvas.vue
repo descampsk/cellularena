@@ -464,8 +464,6 @@ export default defineComponent({
 
       const parent = this.findParent(this.popupX, this.popupY, this.selectedRoot)
       this.selectedRoot = null
-      this.popupX = -1
-      this.popupY = -1
       if (!parent) {
         return
       }
@@ -481,6 +479,8 @@ export default defineComponent({
 
       const rootId = parent.type === EntityType.ROOT ? parent.organId : parent.organRootId
       this.addActionToRoot(action, rootId)
+      this.popupX = -1
+      this.popupY = -1
     },
   },
 })
