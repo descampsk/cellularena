@@ -378,6 +378,8 @@ export default defineComponent({
         this.drawGrid()
       } else if (this.selectedRoot) {
         this.selectedRoot = null
+        this.popupX = -1
+        this.popupY = -1
         this.popupVisible = false
         this.drawGrid()
       }
@@ -436,6 +438,9 @@ export default defineComponent({
     },
     closePopup() {
       this.popupVisible = false
+      this.popupX = -1
+      this.popupY = -1
+      this.drawGrid()
     },
     addAction(organ: OrganType, direction: Direction) {
       if (!this.selectedRoot) {
@@ -459,6 +464,8 @@ export default defineComponent({
 
       const parent = this.findParent(this.popupX, this.popupY, this.selectedRoot)
       this.selectedRoot = null
+      this.popupX = -1
+      this.popupY = -1
       if (!parent) {
         return
       }
