@@ -1,6 +1,13 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="game-layout">
+    <!-- Add give up dialog -->
+    <GiveUpDialog
+      :show="showGiveUpDialog"
+      @close="showGiveUpDialog = false"
+      @confirm="handleGiveUp"
+    />
+
     <!-- Add winner dialog -->
     <WinnerDialog
       v-if="game && winner !== null"
@@ -63,6 +70,7 @@
         </div>
       </div>
       <div v-if="!isReplay" class="action-buttons">
+        <button class="give-up-button" @click="showGiveUpDialog = true">Give Up</button>
         <button
           class="share-button"
           v-if="canSubmitActions"
@@ -105,12 +113,14 @@ import { logEvent } from 'firebase/analytics'
 import type { Bot } from '@/bots/bots'
 import { EndGameChecker } from '@/game/EndGameChecker'
 import WinnerDialog from '@/components/WinnerDialog.vue'
+import GiveUpDialog from '@/components/GiveUpDialog.vue'
 
 export default defineComponent({
   components: {
     PlayerInfo,
     GameCanvas,
     WinnerDialog,
+    GiveUpDialog,
   },
   data() {
     const db = getFirestore(firebaseApp)
@@ -147,6 +157,7 @@ export default defineComponent({
       needsRotation: false,
       isProcessing: false,
       winner: null as Owner | null,
+      showGiveUpDialog: false,
     }
   },
   computed: {
@@ -485,6 +496,9 @@ export default defineComponent({
       this.handleActions(true)
       await this.handleEndGame()
     },
+    handleGiveUp() {
+      this.winner = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
+    },
   },
 })
 </script>
@@ -611,6 +625,17 @@ body {
 
 .share-button:hover {
   background-color: #45a049;
+}
+
+.give-up-button {
+  padding: 8px 16px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  white-space: nowrap;
 }
 
 .top-section {
