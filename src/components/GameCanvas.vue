@@ -23,6 +23,7 @@ import { GrowAction, SporeAction } from '@/game/Actions'
 import { logEvent } from 'firebase/analytics'
 import { firebaseAnalytics } from '@/infra/firebase'
 import { useResponsiveGrid } from '@/composables/useResponsiveGrid'
+import { SpriteService } from '@/utils/SpriteService'
 
 const directionToRotation: Record<Direction, number> = {
   [Direction.E]: 0,
@@ -82,8 +83,11 @@ export default defineComponent({
     return {
       canvas: null as HTMLCanvasElement | null,
       ctx: null as CanvasRenderingContext2D | null,
-      myImages: {} as Record<EntityType, HTMLImageElement>,
-      oppImages: {} as Record<EntityType, HTMLImageElement>,
+      images: {} as Record<EntityType, HTMLImageElement>,
+      spritesPerPlayer: {
+        [Owner.ONE]: new SpriteService(),
+        [Owner.TWO]: new SpriteService(),
+      },
       popupVisible: false,
       popupX: 0,
       popupY: 0,
@@ -100,6 +104,13 @@ export default defineComponent({
     this.backgroundImage = await createImage('background.jpg')
 
     await this.loadImages()
+
+    // Load spritesheets instead of individual images
+    await Promise.all([
+      this.spritesPerPlayer[0].loadSpritesheet('0.png', '0.json'),
+      this.spritesPerPlayer[1].loadSpritesheet('1.png', '1.json'),
+    ])
+
     this.drawGrid()
     this.setupMouseEvents()
 
@@ -138,17 +149,7 @@ export default defineComponent({
 
       // Load my images
       for (const [key, url] of Object.entries(imageUrls)) {
-        this.myImages[key as unknown as EntityType] = await createImage(url)
-      }
-
-      // Load opponent images
-      const oppImageUrls = { ...imageUrls }
-      for (const type of OrganTypes) {
-        oppImageUrls[type] = oppImageUrls[type].replace('0_', '1_')
-      }
-
-      for (const [key, url] of Object.entries(oppImageUrls)) {
-        this.oppImages[key as unknown as EntityType] = await createImage(url)
+        this.images[key as unknown as EntityType] = await createImage(url)
       }
     },
     drawGrid() {
@@ -188,6 +189,7 @@ export default defineComponent({
       for (const entity of this.state.entities) {
         this.drawEntity(entity)
       }
+      this.drawConnectors()
 
       this.drawRegisteredActions()
     },
@@ -196,26 +198,50 @@ export default defineComponent({
 
       const x = entity.x * this.cellSize
       const y = entity.y * this.cellSize
-      const img =
-        entity.owner === Owner.ONE ? this.myImages[entity.type] : this.oppImages[entity.type]
-      const rotation = directionToRotation[entity.organDir]
+      if (OrganTypes.includes(entity.type) && entity.owner !== Owner.NONE) {
+        const spriteService = this.spritesPerPlayer[entity.owner]
+        console.log(entity.organDir)
+        const rotation = directionToRotation[entity.organDir]
 
-      if (img) {
-        this.ctx.save()
-        this.ctx.globalAlpha = opacity // Adjust opacity if needed
-        this.ctx.translate(x + this.cellSize / 2, y + this.cellSize / 2)
-        if (rotation !== 0) {
-          this.ctx.rotate(rotation)
-        }
-        this.ctx.drawImage(
-          img,
-          -this.cellSize / 2,
-          -this.cellSize / 2,
+        spriteService.drawOrgan(
+          this.ctx,
+          entity.type,
+          x,
+          y,
           this.cellSize,
           this.cellSize,
+          rotation,
+          opacity,
         )
-        this.ctx.restore()
+      } else {
+        const image = this.images[entity.type]
+        if (image) {
+          this.ctx.save()
+          this.ctx.globalAlpha = opacity // Adjust opacity if needed
+          this.ctx.translate(x, y)
+          this.ctx.drawImage(image, 0, 0, this.cellSize, this.cellSize)
+          this.ctx.restore()
+        }
       }
+    },
+    drawConnectors() {
+      if (!this.ctx) return
+
+      this.state.entities
+        .filter((e) => e.owner !== Owner.NONE)
+        .forEach((organ) => {
+          const { x, y } = organ
+          const neighbours = this.state.getNeighboursButWall({ x, y })
+          neighbours.forEach(({ x: nx, y: ny }) => {
+            const entity = this.state.getEntityAt({ x: nx, y: ny })
+            if (entity && entity.owner === organ.owner && entity.organParentId === organ.organId) {
+              const spriteService = this.spritesPerPlayer[organ.owner as Owner.ONE | Owner.TWO]
+              if (spriteService) {
+                spriteService.drawConnector(this.ctx!, organ, entity, this.cellSize)
+              }
+            }
+          })
+        })
     },
     drawClickableCells() {
       if (!this.ctx) return

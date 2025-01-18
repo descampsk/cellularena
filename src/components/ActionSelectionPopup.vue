@@ -121,18 +121,7 @@ export default defineComponent({
       return [EntityType.HARVESTER, EntityType.TENTACLE, EntityType.SPORER].includes(organ)
     },
     getImage(organ: EntityType): string {
-      // Import all images from the assets directory
-      const images = import.meta.glob('../assets/*.png', { eager: true })
-      const imagePath = `../assets/${this.playerId}_${organ.toLowerCase()}.png`
-
-      // Find the image in the imported assets
-      const image = images[imagePath] as { default: string } | undefined
-      if (!image) {
-        console.error(`Image not found: ${imagePath}`)
-        return ''
-      }
-
-      return image.default
+      return new URL(`../assets/${this.playerId}_${organ.toLowerCase()}.png`, import.meta.url).href
     },
     getProteinImage(protein: string): string {
       return new URL(`../assets/${protein.toLowerCase()}.png`, import.meta.url).href

@@ -65,6 +65,9 @@ export class Entity implements SimplePoint {
     public organRootId: number,
   ) {
     this.isProtein = ProteinTypes.includes(this.type)
+    if (this.type === EntityType.ROOT) {
+      this.organDir = Direction.X
+    }
   }
 
   static clone(entity: Entity): Entity {
