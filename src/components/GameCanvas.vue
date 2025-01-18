@@ -205,7 +205,7 @@ export default defineComponent({
 
         spriteService.drawOrgan(
           this.ctx,
-          entity.type,
+          entity.type as OrganType,
           x,
           y,
           this.cellSize,
