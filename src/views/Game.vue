@@ -38,7 +38,8 @@
               :game="game"
             />
           </div>
-          <div v-if="game && !isReplay" class="share-button-container">
+          <div class="center-controls">
+            <TurnIndicator :turn="state.turn" />
             <button v-if="game.mode === 'versus'" @click="copyShareLink" class="share-button">
               {{ copyStatus }}
             </button>
@@ -114,6 +115,7 @@ import type { Bot } from '@/bots/bots'
 import { EndGameChecker } from '@/game/EndGameChecker'
 import WinnerDialog from '@/components/WinnerDialog.vue'
 import GiveUpDialog from '@/components/GiveUpDialog.vue'
+import TurnIndicator from '@/components/TurnIndicator.vue'
 
 export default defineComponent({
   components: {
@@ -121,6 +123,7 @@ export default defineComponent({
     GameCanvas,
     WinnerDialog,
     GiveUpDialog,
+    TurnIndicator,
   },
   data() {
     const db = getFirestore(firebaseApp)
@@ -713,6 +716,20 @@ button:disabled {
   display: inline-block;
   margin-right: 8px;
   animation: rotate 1s linear infinite;
+}
+
+.center-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .center-controls {
+    flex-direction: row;
+    gap: 1rem;
+  }
 }
 
 @media (max-width: 1300px) {
