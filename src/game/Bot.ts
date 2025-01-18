@@ -5,7 +5,7 @@ export type BotName = (typeof BotNames)[number]
 export type Bot = {
   description: string
   elo: number
-  availibility: 'GA' | 'ALPHA'
+  availibility: 'GA' | 'ALPHA' | 'BETA'
 }
 
 export const Bots: Record<BotName, Bot> = {
@@ -17,6 +17,6 @@ export const Bots: Record<BotName, Bot> = {
   reCurse: {
     description: "reCurse winner contest's bot",
     elo: 32.69,
-    availibility: 'ALPHA',
+    availibility: 'BETA',
   },
 }

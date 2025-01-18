@@ -99,7 +99,7 @@ export default defineComponent({
       const availability = route.query.availability as string | undefined
       return BotNames.filter((name) => {
         const bot = Bots[name]
-        return bot.availibility === 'GA' || availability?.toUpperCase() === 'ALPHA'
+        return bot.availibility !== 'ALPHA' || availability?.toUpperCase() === 'ALPHA'
       })
     })
 
@@ -362,6 +362,11 @@ button {
 }
 
 .availability-badge.alpha {
+  background-color: #ff9800;
+  color: black;
+}
+
+.availability-badge.beta {
   background-color: #ff9800;
   color: black;
 }
