@@ -583,9 +583,9 @@
     "HARVESTER": {
       "frame": {
         "x": 1743,
-        "y": 1371,
-        "w": 168,
-        "h": 168
+        "y": 1316,
+        "w": 503,
+        "h": 277
       },
       "rotated": false,
       "trimmed": false,
@@ -922,10 +922,10 @@
     },
     "SPORER": {
       "frame": {
-        "x": 1842,
-        "y": 3202,
-        "w": 168,
-        "h": 168
+        "x": 1770,
+        "y": 3183,
+        "w": 412,
+        "h": 205
       },
       "rotated": false,
       "trimmed": false,
@@ -1422,10 +1422,10 @@
     },
     "TENTACLE": {
       "frame": {
-        "x": 73,
-        "y": 95,
-        "w": 168,
-        "h": 168
+        "x": 0,
+        "y": 0,
+        "w": 581,
+        "h": 329
       },
       "rotated": false,
       "trimmed": false,

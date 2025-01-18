@@ -1,5 +1,6 @@
 import type { SimplePoint } from '@/game/Point'
 import { createImage } from './imageLoader'
+import type { OrganType } from '@/game/State'
 
 interface SpriteFrame {
   frame: {
@@ -35,6 +36,22 @@ interface SpriteSheetData {
     scale: number
   }
 }
+
+export const ORGAN_ANCHORS: Record<OrganType, { x: number; y: number }> = {
+  BASIC: { x: 0.5, y: 0.5 },
+  HARVESTER: { x: 84 / 503, y: 0.5 },
+  ROOT: { x: 0.5, y: 0.5 },
+  SPORER: {
+    x: (239 + 72) / 2 / 412,
+    y: (186 + 19) / 2 / 205,
+  },
+  TENTACLE: {
+    x: (73 + 241) / 2 / 581,
+    y: (262 + 95) / 2 / 329,
+  },
+}
+
+const SPRITE_WIDTH_REF = 168
 
 export class SpriteService {
   private spritesheet: HTMLImageElement | null = null
@@ -107,7 +124,7 @@ export class SpriteService {
 
   drawOrgan(
     ctx: CanvasRenderingContext2D,
-    spriteName: string,
+    organType: OrganType,
     x: number,
     y: number,
     width: number,
@@ -120,9 +137,9 @@ export class SpriteService {
       return
     }
 
-    const frame = this.frameData.frames[spriteName]
+    const frame = this.frameData.frames[organType]
     if (!frame) {
-      console.error(`Sprite "${spriteName}" not found in the spritesheet`)
+      console.error(`Sprite "${organType}" not found in the spritesheet`)
       return
     }
 
@@ -137,16 +154,20 @@ export class SpriteService {
       ctx.rotate(rotation)
     }
 
+    const anchor = ORGAN_ANCHORS[organType]
+    const frameX = frame.frame.x + anchor.x * frame.frame.w - SPRITE_WIDTH_REF / 2
+    const frameY = frame.frame.y + anchor.y * frame.frame.h - SPRITE_WIDTH_REF / 2
+
     const paddingX = height / 12
     const paddingY = width / 12
 
     // Draw the sprite
     ctx.drawImage(
       this.spritesheet,
-      frame.frame.x,
-      frame.frame.y,
-      frame.frame.w,
-      frame.frame.h,
+      frameX,
+      frameY,
+      SPRITE_WIDTH_REF,
+      SPRITE_WIDTH_REF,
       -width / 2 + paddingX,
       -height / 2 + paddingY,
       width - paddingX * 2,
