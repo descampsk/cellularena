@@ -322,14 +322,17 @@ export class State {
   }
 
   public checkTentacleAttacksAnimation() {
+    let shouldBeAnimated = false
     const tentacles = this.entities.filter((entity) => entity.type === EntityType.TENTACLE)
     tentacles.forEach((tentacle) => {
       const [dx, dy] = DirectionToDxDy[tentacle.organDir]
       const target = this.getEntityAt({ x: tentacle.x + dx, y: tentacle.y + dy })
       if (target.owner !== Owner.NONE && target.owner !== tentacle.owner) {
         tentacle.shouldBeAnimated = true
+        shouldBeAnimated = true
       }
     })
+    return shouldBeAnimated
   }
 
   public doTentacleAttacks() {
@@ -374,10 +377,14 @@ export class State {
     this.refreshProteins()
     this.doWallCollisions()
     this.retrieveProteinsBonus()
+
+    let shouldBeAnimated = false
     if (checkAnimation) {
-      this.checkTentacleAttacksAnimation()
+      shouldBeAnimated = this.checkTentacleAttacksAnimation()
     }
     // this.doTentacleAttacks()
+
+    return shouldBeAnimated
   }
 
   public retrieveProteinsBonus() {

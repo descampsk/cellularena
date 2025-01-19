@@ -382,8 +382,7 @@ export default defineComponent({
           }
         }
         this.registredActionsPerRoot = {}
-        this.isCanvasAnimating = true
-        this.state.refreshAfterActionsWithoutTentacleAttacks(onlyNew)
+        this.isCanvasAnimating = this.state.refreshAfterActionsWithoutTentacleAttacks(onlyNew)
         while (onlyNew && this.isCanvasAnimating) {
           await sleep(100)
         }

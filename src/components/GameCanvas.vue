@@ -118,11 +118,14 @@ export default defineComponent({
   },
   watch: {
     state: {
-      handler: function () {
+      handler(newState: State) {
         this.drawGrid()
+        // Start animation if there are entities to animate
+        if (newState.entities.some((e) => e.shouldBeAnimated)) {
+          this.startAnimation()
+        }
       },
       deep: true,
-      immediate: true,
     },
     registredActionsPerRoot: {
       handler: function () {
@@ -155,61 +158,113 @@ export default defineComponent({
         this.images[key as unknown as EntityType] = await createImage(url)
       }
     },
-    drawGrid(frameCount = 0) {
+    drawGrid() {
       if (!this.ctx || !this.canvas) return
-
-      let isAnimating = false
-      this.$emit('update:isAnimating', true)
-
-      console.log('Drawing grid', this.canvasWidth, this.canvasHeight)
 
       this.canvas.width = this.canvasWidth
       this.canvas.height = this.canvasHeight
 
-      const ctx = this.ctx
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+      // Draw background and grid
+      this.drawBackground()
+      this.drawGridLines()
+      this.drawClickableCells()
 
-      // Draw background image
-      if (this.backgroundImage) {
-        ctx.globalAlpha = 1.0 // Adjust opacity if needed
-        ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height)
-        ctx.globalAlpha = 1.0
-      }
+      // Draw game elements
+      this.drawAllEntities()
+      this.drawConnectors()
+      this.drawRegisteredActions()
+    },
 
-      // Draw base grid
+    drawBackground() {
+      if (!this.ctx || !this.backgroundImage) return
+      this.ctx.globalAlpha = 1.0
+      this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas!.width, this.canvas!.height)
+    },
+
+    drawGridLines() {
+      if (!this.ctx) return
       for (let row = 0; row < this.state.height; row++) {
         for (let col = 0; col < this.state.width; col++) {
           const x = col * this.cellSize
           const y = row * this.cellSize
-
-          // Draw cell border
-          ctx.strokeStyle = 'black'
-          ctx.strokeRect(x, y, this.cellSize, this.cellSize)
+          this.ctx.strokeStyle = 'black'
+          this.ctx.strokeRect(x, y, this.cellSize, this.cellSize)
         }
-      }
-
-      // Draw clickable cells highlights
-      this.drawClickableCells()
-
-      // Draw entities
-      for (const entity of this.state.entities) {
-        const isAnimatingEntity = this.drawEntity(entity, 1, frameCount)
-        if (isAnimatingEntity) {
-          isAnimating = true
-        }
-      }
-      this.drawConnectors()
-
-      this.drawRegisteredActions()
-
-      console.log('Animating', isAnimating, frameCount)
-
-      if (isAnimating) {
-        setTimeout(() => this.drawGrid(frameCount + 1), 50)
-      } else {
-        this.$emit('update:isAnimating', false)
       }
     },
+
+    drawAllEntities(frameIndex = 0) {
+      let hasAnimatingEntities = false
+
+      // First draw non-animated entities
+      this.state.entities
+        .filter((e) => !e.shouldBeAnimated)
+        .forEach((entity) => {
+          this.drawEntity(entity, 1.0)
+        })
+
+      // Then draw animated entities
+      this.state.entities
+        .filter((e) => e.shouldBeAnimated)
+        .forEach((entity) => {
+          const isStillAnimating = this.drawEntity(entity, 1.0, frameIndex)
+          hasAnimatingEntities = hasAnimatingEntities || isStillAnimating
+        })
+
+      return hasAnimatingEntities
+    },
+
+    startAnimation() {
+      let frameIndex = 0
+      let lastFrameTime = 0
+      const FRAME_INTERVAL = 30 // Increased from default ~16ms to 30ms for slower animation
+
+      const animate = (timestamp: number) => {
+        // Only update if enough time has passed
+        if (timestamp - lastFrameTime >= FRAME_INTERVAL) {
+          this.clearEntitiesLayer()
+          this.drawBackground()
+          this.drawGridLines()
+          this.drawClickableCells()
+
+          const shouldContinue = this.drawAllEntities(frameIndex++)
+
+          this.drawConnectors()
+          this.drawRegisteredActions()
+
+          lastFrameTime = timestamp
+
+          if (shouldContinue) {
+            this.$emit('update:isAnimating', true)
+          } else {
+            this.$emit('update:isAnimating', false)
+            return
+          }
+        }
+
+        requestAnimationFrame(animate)
+      }
+
+      requestAnimationFrame(animate)
+    },
+
+    clearEntitiesLayer() {
+      if (!this.ctx || !this.canvas) return
+      // Clear only the necessary parts where entities are
+      this.state.entities
+        .filter((e) => e.shouldBeAnimated)
+        .forEach((entity) => {
+          const x = entity.x * this.cellSize
+          const y = entity.y * this.cellSize
+          this.ctx!.clearRect(
+            x - this.cellSize / 2,
+            y - this.cellSize / 2,
+            this.cellSize * 2,
+            this.cellSize * 2,
+          )
+        })
+    },
+
     drawEntity(entity: Entity, opacity = 1.0, frameCount = 0) {
       if (!this.ctx) return false
 
