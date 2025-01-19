@@ -200,7 +200,6 @@ export default defineComponent({
       const y = entity.y * this.cellSize
       if (OrganTypes.includes(entity.type) && entity.owner !== Owner.NONE) {
         const spriteService = this.spritesPerPlayer[entity.owner]
-        console.log(entity.organDir)
         const rotation = directionToRotation[entity.organDir]
 
         spriteService.drawOrgan(
@@ -301,7 +300,6 @@ export default defineComponent({
             -1,
             -1,
           )
-          console.log(entity)
           this.drawEntity(entity, 0.5)
         })
     },
@@ -360,14 +358,11 @@ export default defineComponent({
       const col = Math.floor(mouseX / this.cellSize)
       const row = Math.floor(mouseY / this.cellSize)
 
-      console.log(col, row, mouseX, mouseY)
-
       if (col < 0 || col >= this.state.width || row < 0 || row >= this.state.height) {
         return
       }
 
       const entity = this.state.getEntityAt({ x: col, y: row })
-      console.log(entity)
 
       // Checking if we click to remove an action
       for (const [rootId, action] of Object.entries(this.registredActionsPerRoot)) {
@@ -456,7 +451,6 @@ export default defineComponent({
           break
         }
       }
-      console.log('canSpore', canSpore, entity)
       if (canSpore) {
         return entity
       }

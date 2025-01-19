@@ -116,6 +116,7 @@ import { EndGameChecker } from '@/game/EndGameChecker'
 import WinnerDialog from '@/components/WinnerDialog.vue'
 import GiveUpDialog from '@/components/GiveUpDialog.vue'
 import TurnIndicator from '@/components/TurnIndicator.vue'
+import { sleep } from '@/utils/common'
 
 export default defineComponent({
   components: {
@@ -209,11 +210,8 @@ export default defineComponent({
     this.playerId = game.playerIds[this.playerUuid]
 
     await this.initializeGame(game.seed)
-    await this.updateSerializedState()
+    const serializedState = this.getSerializedState()
     const isMapYSymmetrical = this.state.checkYSymmetry()
-    await updateDoc(this.gameRef, {
-      isMapYSymmetrical,
-    })
 
     if (!this.isReplay) {
       this.state.turn = game.turn
@@ -228,6 +226,13 @@ export default defineComponent({
     await this.handleEndGame()
 
     this.initialized = true
+
+    await updateDoc(this.gameRef, {
+      isMapYSymmetrical,
+      serializedState,
+      isInitialized: true,
+    })
+
     console.log('Game initialized')
 
     this.checkOrientation()
@@ -250,16 +255,17 @@ export default defineComponent({
         console.log('Both players have submitted actions')
         this.state.turn++
 
+        await this.handleActions(true)
+
+        const serializedState = this.getSerializedState()
         await updateDoc(this.gameRef, {
           turn: this.state.turn,
+          serializedState,
           waitingForActions: {
             [Owner.ONE]: true,
             [Owner.TWO]: true,
           },
         })
-
-        await this.handleActions(true)
-        await this.updateSerializedState()
         this.handleEndGame()
       } else if (this.playerId === Owner.TWO && this.state.turn + 1 === newGame.turn) {
         console.log('Both players have submitted actions')
@@ -372,7 +378,11 @@ export default defineComponent({
             console.error(`Error processing action:`, error)
           }
         }
-        this.state.refreshAfterActions()
+        this.state.refreshAfterActionsWithoutTentacleAttacks()
+        if (onlyNew) {
+          await sleep(1000)
+        }
+        this.state.doTentacleAttacks()
       }
       console.debug('Actions handled')
       this.registredActionsPerRoot = {}
@@ -423,13 +433,11 @@ export default defineComponent({
         throw error
       }
     },
-    async updateSerializedState() {
+    getSerializedState() {
       const botPlayerId = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
       const serializedState = this.state.createInputsForAI(botPlayerId).join('\n')
 
-      await updateDoc(this.gameRef, {
-        serializedState,
-      })
+      return serializedState
     },
     async resolveAIActions() {
       if (!this.bot) {

@@ -96,19 +96,16 @@ export default defineComponent({
         EntityType.SPORER,
       ],
       directions: [Direction.N, Direction.E, Direction.S, Direction.W],
-    }
-  },
-  computed: {
-    proteinsImagePerOrgan(): Record<OrganType, string[]> {
-      return {
+      proteinsImagePerOrgan: {
         [EntityType.BASIC]: ['a'],
         [EntityType.ROOT]: ['a', 'b', 'c', 'd'],
         [EntityType.HARVESTER]: ['c', 'd'],
         [EntityType.TENTACLE]: ['b', 'c'],
         [EntityType.SPORER]: ['b', 'd'],
-      }
-    },
+      },
+    }
   },
+  computed: {},
   methods: {
     hasEnoughProteins(organ: OrganType): boolean {
       const cost = ProteinsPerOrgan[organ]

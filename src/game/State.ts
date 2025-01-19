@@ -359,11 +359,11 @@ export class State {
     })
   }
 
-  public refreshAfterActions() {
+  public refreshAfterActionsWithoutTentacleAttacks() {
     this.refreshProteins()
     this.doWallCollisions()
     this.retrieveProteinsBonus()
-    this.doTentacleAttacks()
+    // this.doTentacleAttacks()
   }
 
   public retrieveProteinsBonus() {

@@ -20,6 +20,8 @@ export class Game {
 
   public botName: BotName | null = null
 
+  public isInitialized = false
+
   public serializedState: string = ''
 
   public isMapYSymmetrical = false
@@ -75,6 +77,7 @@ export class Game {
     if (botName) this.botName = botName
     if (game.serializedState) this.serializedState = game.serializedState
     if (game.isMapYSymmetrical) this.isMapYSymmetrical = game.isMapYSymmetrical
+    if (game.isInitialized) this.isInitialized = game.isInitialized
   }
 }
 
