@@ -88,7 +88,9 @@
       </div>
       <div v-else class="action-buttons">
         <button class="share-button" @click="replayRefresh">Refresh</button>
-        <button class="share-button" @click="replayNextTurn">Next Turn</button>
+        <button class="share-button" :disabled="isCanvasAnimating" @click="replayNextTurn">
+          Next Turn
+        </button>
       </div>
     </div>
   </div>
@@ -384,11 +386,29 @@ export default defineComponent({
           }
         }
         this.registredActionsPerRoot = {}
-        this.isCanvasAnimating = this.state.refreshAfterActionsWithoutTentacleAttacks(onlyNew)
-        while (onlyNew && this.isCanvasAnimating) {
+        this.state.refreshProteinsAndWallsAfterAction()
+
+        if (onlyNew) {
+          this.isCanvasAnimating = this.state.checkHarvesterAnimation()
+          console.log('Harvester animation:', this.isCanvasAnimating)
           await sleep(100)
+          while (this.isCanvasAnimating) {
+            console.log('Harvester animation:', this.isCanvasAnimating)
+            await sleep(100)
+          }
+
+          this.isCanvasAnimating = this.state.checkTentacleAttacksAnimation()
+          while (this.isCanvasAnimating) {
+            await sleep(100)
+          }
         }
+
         this.state.doTentacleAttacks()
+      }
+
+      const gameCanvas = this.$refs.gameCanvas as typeof GameCanvas
+      if (gameCanvas) {
+        gameCanvas.drawGrid()
       }
       console.debug('Actions handled')
     },
@@ -515,6 +535,7 @@ export default defineComponent({
     },
     handleGiveUp() {
       this.winner = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
+      this.winReason = 'Give Up'
     },
   },
 })

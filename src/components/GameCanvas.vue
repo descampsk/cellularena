@@ -116,15 +116,10 @@ export default defineComponent({
     window.removeEventListener('resize', () => this.drawGrid())
   },
   watch: {
-    state: {
-      handler(newState: State) {
-        this.drawGrid()
-        // Start animation if there are entities to animate
-        if (newState.entities.some((e) => e.shouldBeAnimated)) {
-          this.startAnimation()
-        }
-      },
-      deep: true,
+    isAnimating: function () {
+      if (this.isAnimating) {
+        this.startAnimation()
+      }
     },
     registredActionsPerRoot: {
       handler: function () {

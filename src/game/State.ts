@@ -422,17 +422,27 @@ export class State {
     })
   }
 
-  public refreshAfterActionsWithoutTentacleAttacks(checkAnimation: boolean = true) {
+  public refreshProteinsAndWallsAfterAction() {
     this.refreshProteins()
     this.doWallCollisions()
     this.retrieveProteinsBonus()
+  }
 
+  public checkHarvesterAnimation() {
     let shouldBeAnimated = false
-    if (checkAnimation) {
-      shouldBeAnimated = this.checkTentacleAttacksAnimation()
-    }
-    // this.doTentacleAttacks()
-
+    const harvesters = this.entities.filter((entity) => entity.type === EntityType.HARVESTER)
+    harvesters.forEach((harvester) => {
+      const neighbours = this.getNeighbours(harvester)
+      neighbours.forEach((n) => {
+        const entity = this.getEntityAt(n)
+        if (!entity.isProtein) return
+        const direction = getDirection(harvester, n)
+        if (direction !== harvester.organDir) return
+        harvester.shouldBeAnimated = true
+        shouldBeAnimated = true
+      })
+    })
+    console.log(this.entities.filter((e) => e.shouldBeAnimated))
     return shouldBeAnimated
   }
 

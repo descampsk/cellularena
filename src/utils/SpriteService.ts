@@ -56,7 +56,7 @@ const MAX_FRAME_ANIMATION = {
   TENTACLE: 25,
   ROOT: 0,
   SPORER: 0,
-  HARVESTER: 0,
+  HARVESTER: 17,
   BASIC: 0,
 }
 
