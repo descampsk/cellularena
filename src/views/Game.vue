@@ -10,10 +10,11 @@
 
     <!-- Add winner dialog -->
     <WinnerDialog
-      v-if="game && winner !== null"
+      v-if="game && winner !== null && winReason !== null"
       :show="winner !== null"
       :scorePerPlayer="scorePerPlayer"
       :winner="winner"
+      :winReason="winReason"
       :game="game"
       :playerId="playerId"
     />
@@ -163,6 +164,7 @@ export default defineComponent({
       needsRotation: false,
       isProcessing: false,
       winner: null as Owner | null,
+      winReason: null as string | null,
       showGiveUpDialog: false,
       isCanvasAnimating: false,
     }
@@ -218,7 +220,7 @@ export default defineComponent({
 
     if (!this.isReplay) {
       this.state.turn = game.turn
-      this.handleActions(false)
+      await this.handleActions(false)
       if (game.mode === 'solo') {
         this.bot = (await this.loadBot('q6IXPuqRV1')) as Bot
       }
@@ -493,12 +495,13 @@ export default defineComponent({
       })
     },
     async handleEndGame() {
-      const winner = this.endGameChecker.checkWinner()
+      const { winner, reason } = this.endGameChecker.checkWinner()
       if (winner !== null) {
         await updateDoc(this.gameRef, {
           winner,
         })
         this.winner = winner
+        this.winReason = reason
       }
     },
     async replayRefresh() {

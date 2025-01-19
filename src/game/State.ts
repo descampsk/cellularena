@@ -1,4 +1,4 @@
-import { getDirection } from './helpers'
+import { AllDxDy, getDirection } from './helpers'
 import { Direction, Entity, EntityType, getDxDyFromDirection, Owner, ProteinTypes } from './Entity'
 import { type SimplePoint } from './Point'
 import { GrowAction, WaitAction, type SporeAction } from './Actions'
@@ -264,6 +264,55 @@ export class State {
         ),
     )
     return neighbours
+  }
+
+  public findParent(x: number, y: number, selectedRoot: Entity, playerId: Owner): Entity | null {
+    const neighours = this.getNeighboursButWall({ x, y }).map((n) => this.getEntityAt(n))
+    const parent = neighours.find((n) => {
+      return (
+        n &&
+        n.owner === playerId &&
+        (n.organRootId === selectedRoot.organId || n.organId === selectedRoot.organId)
+      )
+    })
+
+    return parent ? parent : null
+  }
+
+  findSporerParent(x: number, y: number, selectedRoot: Entity, playerId: Owner): Entity | null {
+    let canSpore = false
+    let entity = this.getEntityAt({ x, y })
+    for (const [dx, dy] of AllDxDy) {
+      let nx = x + dx
+      let ny = y + dy
+      while (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+        entity = this.getEntityAt({ x: nx, y: ny })
+        if ([EntityType.EMPTY, ...ProteinTypes].includes(entity.type)) {
+          nx += dx
+          ny += dy
+          continue
+        }
+
+        if (
+          entity.type === EntityType.SPORER &&
+          entity.organRootId === selectedRoot.organId &&
+          entity.owner === playerId &&
+          entity.organDir === getDirection({ x: nx, y: ny }, { x: nx - dx, y: ny - dy })
+        ) {
+          canSpore = true
+          break
+        }
+        nx += dx
+        ny += dy
+      }
+      if (canSpore) {
+        break
+      }
+    }
+    if (canSpore) {
+      return entity
+    }
+    return null
   }
 
   public applyAction(action: GrowAction | SporeAction | WaitAction) {

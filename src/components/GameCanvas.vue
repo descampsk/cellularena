@@ -12,8 +12,7 @@
 </template>
 
 <script lang="ts">
-import { Direction, Entity, EntityType, Owner, ProteinTypes } from '@/game/Entity'
-import { AllDxDy, getDirection } from '@/game/helpers'
+import { Direction, Entity, EntityType, Owner } from '@/game/Entity'
 import { OrganTypes, State, type OrganType, type ProteinType } from '@/game/State'
 import { createImage } from '@/utils/imageLoader'
 import { defineComponent, type PropType } from 'vue'
@@ -481,56 +480,6 @@ export default defineComponent({
       }
     },
 
-    findParent(x: number, y: number, selectedRoot: Entity): Entity | null {
-      const neighours = this.state
-        .getNeighboursButWall({ x, y })
-        .map((n) => this.state.getEntityAt(n))
-      const parent = neighours.find((n) => {
-        return (
-          n &&
-          n.owner === this.playerId &&
-          (n.organRootId === selectedRoot.organId || n.organId === selectedRoot.organId)
-        )
-      })
-
-      return parent ? parent : null
-    },
-
-    findSporerParent(x: number, y: number, selectedRoot: Entity): Entity | null {
-      let canSpore = false
-      let entity = this.state.getEntityAt({ x, y })
-      for (const [dx, dy] of AllDxDy) {
-        let nx = x + dx
-        let ny = y + dy
-        while (nx >= 0 && nx < this.state.width && ny >= 0 && ny < this.state.height) {
-          entity = this.state.getEntityAt({ x: nx, y: ny })
-          if ([EntityType.EMPTY, ...ProteinTypes].includes(entity.type)) {
-            nx += dx
-            ny += dy
-            continue
-          }
-
-          if (
-            entity.type === EntityType.SPORER &&
-            entity.organRootId === selectedRoot.organId &&
-            entity.owner === this.playerId &&
-            entity.organDir === getDirection({ x: nx, y: ny }, { x: nx - dx, y: ny - dy })
-          ) {
-            canSpore = true
-            break
-          }
-          nx += dx
-          ny += dy
-        }
-        if (canSpore) {
-          break
-        }
-      }
-      if (canSpore) {
-        return entity
-      }
-      return null
-    },
     closePopup() {
       this.popupVisible = false
       this.popupX = -1
@@ -543,7 +492,12 @@ export default defineComponent({
       }
 
       if (organ === EntityType.ROOT) {
-        const sporerParent = this.findSporerParent(this.popupX, this.popupY, this.selectedRoot)
+        const sporerParent = this.state.findSporerParent(
+          this.popupX,
+          this.popupY,
+          this.selectedRoot,
+          this.playerId,
+        )
         this.selectedRoot = null
         if (!sporerParent) {
           return
@@ -557,7 +511,12 @@ export default defineComponent({
         return
       }
 
-      const parent = this.findParent(this.popupX, this.popupY, this.selectedRoot)
+      const parent = this.state.findParent(
+        this.popupX,
+        this.popupY,
+        this.selectedRoot,
+        this.playerId,
+      )
       this.selectedRoot = null
       if (!parent) {
         return

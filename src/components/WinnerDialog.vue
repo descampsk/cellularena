@@ -7,6 +7,10 @@
         {{ winnerAnnouncement }}
       </div>
 
+      <div class="win-reason" :class="winnerClass">
+        {{ winReason }}
+      </div>
+
       <div class="scores">
         <div class="score-line">
           <span class="player blue">Blue Player</span>
@@ -47,6 +51,10 @@ export default defineComponent({
     },
     winner: {
       type: Number as PropType<Owner>,
+      required: true,
+    },
+    winReason: {
+      type: String,
       required: true,
     },
     game: {
@@ -139,6 +147,26 @@ export default defineComponent({
   text-transform: uppercase;
 }
 
+.win-reason {
+  font-size: clamp(0.9rem, 3vw, 1.1rem);
+  text-align: center;
+  margin: -0.5rem 0 0.5rem;
+  opacity: 0.9;
+  font-style: italic;
+}
+
+.win-reason.blue {
+  color: #2196f3;
+}
+
+.win-reason.red {
+  color: #f44336;
+}
+
+.win-reason.draw {
+  color: #757575;
+}
+
 .scores {
   margin: 0.5rem 0;
 }
@@ -217,6 +245,13 @@ export default defineComponent({
     font-size: clamp(1.2rem, 4vw, 1.5rem);
   }
 
+  .win-reason {
+    width: 100%;
+    text-align: left;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    margin: 0;
+  }
+
   .scores {
     width: 100%;
     margin: 0;
@@ -251,6 +286,11 @@ export default defineComponent({
 
   .winner-announcement {
     font-size: 1.2rem;
+  }
+
+  .win-reason {
+    font-size: 0.8rem;
+    margin: -0.25rem 0 0.25rem;
   }
 
   .score-line {
