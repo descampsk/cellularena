@@ -76,6 +76,7 @@ export default defineComponent({
       const newGame = new Game({
         mode: this.game.mode,
         playerIds: { ...this.game.playerIds },
+        botName: this.game.botName,
       })
 
       const gameDoc = doc(db, 'games', newGame.id).withConverter(gameFirestoreConvertor)
