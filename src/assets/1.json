@@ -580,7 +580,7 @@
         "h": 102
       }
     },
-    "HARVESTER": {
+    "HARVESTER_0": {
       "frame": {
         "x": 1743,
         "y": 1316,
@@ -920,7 +920,7 @@
         "h": 277
       }
     },
-    "SPORER": {
+    "SPORER_0": {
       "frame": {
         "x": 1770,
         "y": 3183,
@@ -1420,7 +1420,7 @@
         "h": 205
       }
     },
-    "TENTACLE": {
+    "TENTACLE_0": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -1440,7 +1440,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0003": {
+    "TENTACLE_1": {
       "frame": {
         "x": 0,
         "y": 329,
@@ -1460,7 +1460,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0005": {
+    "TENTACLE_2": {
       "frame": {
         "x": 0,
         "y": 658,
@@ -1480,7 +1480,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0007": {
+    "TENTACLE_3": {
       "frame": {
         "x": 581,
         "y": 0,
@@ -1500,7 +1500,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0009": {
+    "TENTACLE_4": {
       "frame": {
         "x": 581,
         "y": 329,
@@ -1520,7 +1520,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0011": {
+    "TENTACLE_5": {
       "frame": {
         "x": 581,
         "y": 658,
@@ -1540,7 +1540,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0013": {
+    "TENTACLE_6": {
       "frame": {
         "x": 0,
         "y": 987,
@@ -1560,7 +1560,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0015": {
+    "TENTACLE_7": {
       "frame": {
         "x": 581,
         "y": 987,
@@ -1580,7 +1580,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0017": {
+    "TENTACLE_8": {
       "frame": {
         "x": 0,
         "y": 1316,
@@ -1600,7 +1600,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0019": {
+    "TENTACLE_9": {
       "frame": {
         "x": 581,
         "y": 1316,
@@ -1620,7 +1620,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0021": {
+    "TENTACLE_10": {
       "frame": {
         "x": 1162,
         "y": 0,
@@ -1640,7 +1640,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0023": {
+    "TENTACLE_11": {
       "frame": {
         "x": 1162,
         "y": 329,
@@ -1660,7 +1660,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0025": {
+    "TENTACLE_12": {
       "frame": {
         "x": 1162,
         "y": 658,
@@ -1680,7 +1680,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0027": {
+    "TENTACLE_13": {
       "frame": {
         "x": 1162,
         "y": 987,
@@ -1700,7 +1700,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0029": {
+    "TENTACLE_14": {
       "frame": {
         "x": 1162,
         "y": 1316,
@@ -1720,7 +1720,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0031": {
+    "TENTACLE_15": {
       "frame": {
         "x": 0,
         "y": 1645,
@@ -1740,7 +1740,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0033": {
+    "TENTACLE_16": {
       "frame": {
         "x": 581,
         "y": 1645,
@@ -1760,7 +1760,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0035": {
+    "TENTACLE_17": {
       "frame": {
         "x": 1162,
         "y": 1645,
@@ -1780,7 +1780,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0037": {
+    "TENTACLE_18": {
       "frame": {
         "x": 0,
         "y": 1974,
@@ -1800,7 +1800,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0039": {
+    "TENTACLE_19": {
       "frame": {
         "x": 581,
         "y": 1974,
@@ -1820,7 +1820,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0041": {
+    "TENTACLE_20": {
       "frame": {
         "x": 1162,
         "y": 1974,
@@ -1840,7 +1840,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0043": {
+    "TENTACLE_21": {
       "frame": {
         "x": 1743,
         "y": 0,
@@ -1860,7 +1860,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0045": {
+    "TENTACLE_22": {
       "frame": {
         "x": 1743,
         "y": 329,
@@ -1880,7 +1880,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0047": {
+    "TENTACLE_23": {
       "frame": {
         "x": 1743,
         "y": 658,
@@ -1900,7 +1900,7 @@
         "h": 329
       }
     },
-    "OrangeTentAttaque0049": {
+    "TENTACLE_24": {
       "frame": {
         "x": 1743,
         "y": 987,
@@ -1920,7 +1920,27 @@
         "h": 329
       }
     },
-    "BASIC": {
+    "TENTACLE_25": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 581,
+        "h": 329
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 581,
+        "h": 329
+      },
+      "sourceSize": {
+        "w": 581,
+        "h": 329
+      }
+    },
+    "BASIC_0": {
       "frame": {
         "x": 3006,
         "y": 3183,
@@ -2000,7 +2020,7 @@
         "h": 168
       }
     },
-    "ROOT": {
+    "ROOT_0": {
       "frame": {
         "x": 2563,
         "y": 2580,

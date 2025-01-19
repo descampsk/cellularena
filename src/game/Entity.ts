@@ -54,6 +54,8 @@ export class Entity implements SimplePoint {
 
   public oldEntity: Entity | null = null
 
+  public shouldBeAnimated = false
+
   constructor(
     public x: number,
     public y: number,

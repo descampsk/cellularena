@@ -60,6 +60,7 @@
       <div v-if="game && initialized" class="main-section">
         <div class="canvas-wrapper">
           <GameCanvas
+            ref="gameCanvas"
             :state="state"
             :game="game"
             :playerId="playerId"
@@ -67,6 +68,7 @@
             :registredActionsPerRoot="registredActionsPerRoot"
             :addActionToRoot="addActionToRoot"
             :removeActionFromRoot="removeActionFromRoot"
+            v-model:is-animating="isCanvasAnimating"
           />
         </div>
       </div>
@@ -162,6 +164,7 @@ export default defineComponent({
       isProcessing: false,
       winner: null as Owner | null,
       showGiveUpDialog: false,
+      isCanvasAnimating: false,
     }
   },
   computed: {
@@ -378,14 +381,15 @@ export default defineComponent({
             console.error(`Error processing action:`, error)
           }
         }
-        this.state.refreshAfterActionsWithoutTentacleAttacks()
-        if (onlyNew) {
-          await sleep(1000)
+        this.registredActionsPerRoot = {}
+        this.isCanvasAnimating = true
+        this.state.refreshAfterActionsWithoutTentacleAttacks(onlyNew)
+        while (onlyNew && this.isCanvasAnimating) {
+          await sleep(100)
         }
         this.state.doTentacleAttacks()
       }
       console.debug('Actions handled')
-      this.registredActionsPerRoot = {}
     },
     addActionToRoot(action: GrowAction | SporeAction, rootId: number) {
       this.registredActionsPerRoot[rootId] = action

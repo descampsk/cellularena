@@ -1,6 +1,7 @@
 import type { SimplePoint } from '@/game/Point'
 import { createImage } from './imageLoader'
 import type { OrganType } from '@/game/State'
+import { Direction, type Entity } from '@/game/Entity'
 
 interface SpriteFrame {
   frame: {
@@ -51,7 +52,23 @@ export const ORGAN_ANCHORS: Record<OrganType, { x: number; y: number }> = {
   },
 }
 
+const MAX_FRAME_ANIMATION = {
+  TENTACLE: 25,
+  ROOT: 0,
+  SPORER: 0,
+  HARVESTER: 0,
+  BASIC: 0,
+}
+
 const SPRITE_WIDTH_REF = 168
+
+const directionToRotation: Record<Direction, number> = {
+  [Direction.E]: 0,
+  [Direction.N]: -Math.PI / 2,
+  [Direction.W]: Math.PI,
+  [Direction.S]: Math.PI / 2,
+  [Direction.X]: 0,
+}
 
 export class SpriteService {
   private spritesheet: HTMLImageElement | null = null
@@ -124,23 +141,22 @@ export class SpriteService {
 
   drawOrgan(
     ctx: CanvasRenderingContext2D,
-    organType: OrganType,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    rotation: number = 0,
+    organ: Entity,
+    cellSize: number,
     opacity: number = 1,
-  ): void {
+    frameIndex: number = 0,
+  ): boolean {
     if (!this.spritesheet || !this.frameData) {
       console.error('Spritesheet not loaded')
-      return
+      return false
     }
 
-    const frame = this.frameData.frames[organType]
+    const frame = organ.shouldBeAnimated
+      ? this.frameData.frames[`${organ.type}_${frameIndex}`]
+      : this.frameData.frames[`${organ.type}_0`]
     if (!frame) {
-      console.error(`Sprite "${organType}" not found in the spritesheet`)
-      return
+      console.error(`Sprite "${organ.type}" not found in the spritesheet`)
+      return false
     }
 
     ctx.save()
@@ -148,33 +164,40 @@ export class SpriteService {
     // Set global alpha for opacity
     ctx.globalAlpha = opacity
 
+    const { x, y } = organ
     // Move to position and handle rotation
-    ctx.translate(x + width / 2, y + width / 2)
+    ctx.translate(x * cellSize + cellSize / 2, y * cellSize + cellSize / 2)
+    const rotation = directionToRotation[organ.organDir]
     if (rotation !== 0) {
       ctx.rotate(rotation)
     }
 
-    const anchor = ORGAN_ANCHORS[organType]
-    const frameX = frame.frame.x + anchor.x * frame.frame.w - SPRITE_WIDTH_REF / 2
-    const frameY = frame.frame.y + anchor.y * frame.frame.h - SPRITE_WIDTH_REF / 2
+    const anchor = ORGAN_ANCHORS[organ.type as OrganType]
 
-    const paddingX = height / 12
-    const paddingY = width / 12
+    const padding = cellSize / 12
 
-    // Draw the sprite
+    const scale = (cellSize - padding * 2) / SPRITE_WIDTH_REF
     ctx.drawImage(
       this.spritesheet,
-      frameX,
-      frameY,
-      SPRITE_WIDTH_REF,
-      SPRITE_WIDTH_REF,
-      -width / 2 + paddingX,
-      -height / 2 + paddingY,
-      width - paddingX * 2,
-      height - paddingY * 2,
+      frame.frame.x,
+      frame.frame.y,
+      frame.frame.w,
+      frame.frame.h,
+      -anchor.x * frame.frame.w * scale,
+      -anchor.y * frame.frame.h * scale,
+      frame.frame.w * scale,
+      frame.frame.h * scale,
     )
 
     ctx.restore()
+
+    const maxFrame = MAX_FRAME_ANIMATION[organ.type as OrganType]
+    if (frameIndex >= maxFrame) {
+      organ.shouldBeAnimated = false
+      return false
+    }
+
+    return organ.shouldBeAnimated
   }
 
   getSpriteFrame(spriteName: string): SpriteFrame | null {

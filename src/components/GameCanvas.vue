@@ -25,14 +25,6 @@ import { firebaseAnalytics } from '@/infra/firebase'
 import { useResponsiveGrid } from '@/composables/useResponsiveGrid'
 import { SpriteService } from '@/utils/SpriteService'
 
-const directionToRotation: Record<Direction, number> = {
-  [Direction.E]: 0,
-  [Direction.N]: -Math.PI / 2,
-  [Direction.W]: Math.PI,
-  [Direction.S]: Math.PI / 2,
-  [Direction.X]: 0,
-}
-
 export default defineComponent({
   components: {
     ActionSelectionPopup,
@@ -66,7 +58,12 @@ export default defineComponent({
       type: Function as PropType<(rootId: number) => void>,
       required: true,
     },
+    isAnimating: {
+      type: Boolean,
+      required: true,
+    },
   },
+  emits: ['update:isAnimating'],
   setup(props) {
     const { cellSize, canvasWidth, canvasHeight } = useResponsiveGrid(
       props.state.width,
@@ -114,22 +111,28 @@ export default defineComponent({
     this.drawGrid()
     this.setupMouseEvents()
 
-    window.addEventListener('resize', this.drawGrid)
+    window.addEventListener('resize', () => this.drawGrid())
   },
   unmounted() {
-    window.removeEventListener('resize', this.drawGrid)
+    window.removeEventListener('resize', () => this.drawGrid())
   },
   watch: {
     state: {
-      handler: 'drawGrid',
+      handler: function () {
+        this.drawGrid()
+      },
       deep: true,
       immediate: true,
     },
     registredActionsPerRoot: {
-      handler: 'drawGrid',
+      handler: function () {
+        this.drawGrid()
+      },
       deep: true,
     },
-    playerId: 'drawGrid',
+    playerId: function () {
+      this.drawGrid()
+    },
   },
   methods: {
     async loadImages() {
@@ -152,8 +155,11 @@ export default defineComponent({
         this.images[key as unknown as EntityType] = await createImage(url)
       }
     },
-    drawGrid() {
+    drawGrid(frameCount = 0) {
       if (!this.ctx || !this.canvas) return
+
+      let isAnimating = false
+      this.$emit('update:isAnimating', true)
 
       console.log('Drawing grid', this.canvasWidth, this.canvasHeight)
 
@@ -187,31 +193,42 @@ export default defineComponent({
 
       // Draw entities
       for (const entity of this.state.entities) {
-        this.drawEntity(entity)
+        const isAnimatingEntity = this.drawEntity(entity, 1, frameCount)
+        if (isAnimatingEntity) {
+          isAnimating = true
+        }
       }
       this.drawConnectors()
 
       this.drawRegisteredActions()
+
+      console.log('Animating', isAnimating, frameCount)
+
+      if (isAnimating) {
+        setTimeout(() => this.drawGrid(frameCount + 1), 50)
+      } else {
+        this.$emit('update:isAnimating', false)
+      }
     },
-    drawEntity(entity: Entity, opacity = 1.0) {
-      if (!this.ctx) return
+    drawEntity(entity: Entity, opacity = 1.0, frameCount = 0) {
+      if (!this.ctx) return false
+
+      let shouldContinueAnimating = false
 
       const x = entity.x * this.cellSize
       const y = entity.y * this.cellSize
       if (OrganTypes.includes(entity.type) && entity.owner !== Owner.NONE) {
         const spriteService = this.spritesPerPlayer[entity.owner]
-        const rotation = directionToRotation[entity.organDir]
-
-        spriteService.drawOrgan(
+        const isAnimating = spriteService.drawOrgan(
           this.ctx,
-          entity.type as OrganType,
-          x,
-          y,
+          entity,
           this.cellSize,
-          this.cellSize,
-          rotation,
           opacity,
+          frameCount,
         )
+        if (!shouldContinueAnimating && isAnimating) {
+          shouldContinueAnimating = true
+        }
       } else {
         const image = this.images[entity.type]
         if (image) {
@@ -222,6 +239,8 @@ export default defineComponent({
           this.ctx.restore()
         }
       }
+
+      return shouldContinueAnimating
     },
     drawConnectors() {
       if (!this.ctx) return
@@ -300,6 +319,7 @@ export default defineComponent({
             -1,
             -1,
           )
+          entity.shouldBeAnimated = false
           this.drawEntity(entity, 0.5)
         })
     },

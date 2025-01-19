@@ -321,6 +321,17 @@ export class State {
     }
   }
 
+  public checkTentacleAttacksAnimation() {
+    const tentacles = this.entities.filter((entity) => entity.type === EntityType.TENTACLE)
+    tentacles.forEach((tentacle) => {
+      const [dx, dy] = DirectionToDxDy[tentacle.organDir]
+      const target = this.getEntityAt({ x: tentacle.x + dx, y: tentacle.y + dy })
+      if (target.owner !== Owner.NONE && target.owner !== tentacle.owner) {
+        tentacle.shouldBeAnimated = true
+      }
+    })
+  }
+
   public doTentacleAttacks() {
     const tentacles = this.entities.filter((entity) => entity.type === EntityType.TENTACLE)
     const entitiesToDestroy: Entity[] = []
@@ -359,10 +370,13 @@ export class State {
     })
   }
 
-  public refreshAfterActionsWithoutTentacleAttacks() {
+  public refreshAfterActionsWithoutTentacleAttacks(checkAnimation: boolean = true) {
     this.refreshProteins()
     this.doWallCollisions()
     this.retrieveProteinsBonus()
+    if (checkAnimation) {
+      this.checkTentacleAttacksAnimation()
+    }
     // this.doTentacleAttacks()
   }
 
