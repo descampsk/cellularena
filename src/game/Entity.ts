@@ -14,6 +14,14 @@ export enum EntityType {
   D = 'D',
 }
 
+export const OrganTypes = [
+  EntityType.ROOT,
+  EntityType.BASIC,
+  EntityType.HARVESTER,
+  EntityType.TENTACLE,
+  EntityType.SPORER,
+]
+
 export const ProteinTypes = [EntityType.A, EntityType.B, EntityType.C, EntityType.D]
 
 export enum Owner {
@@ -56,6 +64,8 @@ export class Entity implements SimplePoint {
 
   public shouldBeAnimated = false
 
+  public isGrowing = false
+
   constructor(
     public x: number,
     public y: number,
@@ -69,6 +79,9 @@ export class Entity implements SimplePoint {
     this.isProtein = ProteinTypes.includes(this.type)
     if (this.type === EntityType.ROOT) {
       this.organDir = Direction.X
+    }
+    if (OrganTypes.includes(this.type)) {
+      this.isGrowing = true
     }
   }
 

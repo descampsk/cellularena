@@ -389,9 +389,13 @@ export default defineComponent({
         this.state.refreshProteinsAndWallsAfterAction()
 
         if (onlyNew) {
+          this.isCanvasAnimating = this.state.checkGrowAnimation()
+          while (this.isCanvasAnimating) {
+            await sleep(100)
+          }
+
           this.isCanvasAnimating = this.state.checkHarvesterAnimation()
           console.log('Harvester animation:', this.isCanvasAnimating)
-          await sleep(100)
           while (this.isCanvasAnimating) {
             console.log('Harvester animation:', this.isCanvasAnimating)
             await sleep(100)

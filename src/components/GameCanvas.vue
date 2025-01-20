@@ -12,8 +12,8 @@
 </template>
 
 <script lang="ts">
-import { Direction, Entity, EntityType, Owner } from '@/game/Entity'
-import { OrganTypes, State, type OrganType, type ProteinType } from '@/game/State'
+import { Direction, Entity, EntityType, OrganTypes, Owner } from '@/game/Entity'
+import { State, type OrganType, type ProteinType } from '@/game/State'
 import { createImage } from '@/utils/imageLoader'
 import { defineComponent, type PropType } from 'vue'
 import ActionSelectionPopup from './ActionSelectionPopup.vue'

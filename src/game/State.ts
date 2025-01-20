@@ -40,14 +40,6 @@ export const DirectionToDxDy: Record<Direction, [number, number]> = {
   [Direction.W]: [-1, 0],
   [Direction.X]: [0, 0],
 }
-
-export const OrganTypes = [
-  EntityType.ROOT,
-  EntityType.BASIC,
-  EntityType.HARVESTER,
-  EntityType.TENTACLE,
-  EntityType.SPORER,
-]
 export type OrganType =
   | EntityType.BASIC
   | EntityType.ROOT
@@ -136,13 +128,12 @@ export class State {
       const [xStr, yStr, type, owner, organId, organDir, organParentId, organRootId] = inputs
         .shift()!
         .split(' ')
-      const entityType = StringToEntityType[type as keyof typeof StringToEntityType]
       const x = parseInt(xStr)
       const y = parseInt(yStr)
       const entity = new Entity(
         x,
         y,
-        entityType,
+        type as EntityType,
         parseInt(owner),
         parseInt(organId),
         organDir as Direction,
@@ -381,6 +372,18 @@ export class State {
         shouldBeAnimated = true
       }
     })
+    return shouldBeAnimated
+  }
+
+  public checkGrowAnimation() {
+    let shouldBeAnimated = false
+    this.entities
+      .filter((entity) => entity.isGrowing)
+      .forEach((entity) => {
+        shouldBeAnimated = true
+        entity.shouldBeAnimated = true
+      })
+
     return shouldBeAnimated
   }
 

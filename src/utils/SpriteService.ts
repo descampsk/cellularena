@@ -58,6 +58,7 @@ const MAX_FRAME_ANIMATION = {
   SPORER: 0,
   HARVESTER: 17,
   BASIC: 0,
+  GROW: 7,
 }
 
 const SPRITE_WIDTH_REF = 168
@@ -151,9 +152,11 @@ export class SpriteService {
       return false
     }
 
-    const frame = organ.shouldBeAnimated
-      ? this.frameData.frames[`${organ.type}_${frameIndex}`]
-      : this.frameData.frames[`${organ.type}_0`]
+    const animatedFrame = organ.isGrowing
+      ? this.frameData.frames[`GROW_${frameIndex}`]
+      : this.frameData.frames[`${organ.type}_${frameIndex}`]
+
+    const frame = organ.shouldBeAnimated ? animatedFrame : this.frameData.frames[`${organ.type}_0`]
     if (!frame) {
       console.error(`Sprite "${organ.type}" not found in the spritesheet`)
       return false
@@ -191,9 +194,10 @@ export class SpriteService {
 
     ctx.restore()
 
-    const maxFrame = MAX_FRAME_ANIMATION[organ.type as OrganType]
-    if (frameIndex >= maxFrame) {
+    const maxFrame = MAX_FRAME_ANIMATION[organ.isGrowing ? 'GROW' : (organ.type as OrganType)]
+    if (frameIndex >= maxFrame || !organ.shouldBeAnimated) {
       organ.shouldBeAnimated = false
+      organ.isGrowing = false
       return false
     }
 
