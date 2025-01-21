@@ -97,9 +97,9 @@ export default defineComponent({
     },
     watchReplay() {
       const playerUuid = Object.entries(this.game.playerIds).find(
-        ([, id]) => id !== this.playerId,
+        ([, id]) => id === this.playerId,
       )?.[0]
-      router.push(`/replay/${this.game.id}/player/${playerUuid}`)
+      router.push(`/replay/${this.game.id}/player/${playerUuid}?refresher=${Math.random()}`)
     },
     goToMenu() {
       router.push('/')
