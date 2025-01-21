@@ -960,7 +960,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0003": {
+    "SPORER_1": {
       "frame": {
         "x": 2182,
         "y": 3183,
@@ -980,7 +980,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0005": {
+    "SPORER_2": {
       "frame": {
         "x": 2594,
         "y": 3183,
@@ -1000,7 +1000,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0007": {
+    "SPORER_3": {
       "frame": {
         "x": 503,
         "y": 2580,
@@ -1020,7 +1020,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0009": {
+    "SPORER_4": {
       "frame": {
         "x": 915,
         "y": 2580,
@@ -1040,7 +1040,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0011": {
+    "SPORER_5": {
       "frame": {
         "x": 1327,
         "y": 2580,
@@ -1060,7 +1060,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0013": {
+    "SPORER_6": {
       "frame": {
         "x": 1739,
         "y": 2580,
@@ -1080,7 +1080,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0015": {
+    "SPORER_7": {
       "frame": {
         "x": 2151,
         "y": 2580,
@@ -1100,7 +1100,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0017": {
+    "SPORER_8": {
       "frame": {
         "x": 3181,
         "y": 0,
@@ -1120,7 +1120,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0019": {
+    "SPORER_9": {
       "frame": {
         "x": 3181,
         "y": 205,
@@ -1140,7 +1140,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0021": {
+    "SPORER_10": {
       "frame": {
         "x": 3181,
         "y": 410,
@@ -1160,7 +1160,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0023": {
+    "SPORER_11": {
       "frame": {
         "x": 3181,
         "y": 615,
@@ -1180,7 +1180,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0025": {
+    "SPORER_12": {
       "frame": {
         "x": 3181,
         "y": 820,
@@ -1200,7 +1200,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0027": {
+    "SPORER_13": {
       "frame": {
         "x": 3181,
         "y": 1025,
@@ -1220,7 +1220,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0029": {
+    "SPORER_14": {
       "frame": {
         "x": 3181,
         "y": 1230,
@@ -1240,7 +1240,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0031": {
+    "SPORER_15": {
       "frame": {
         "x": 3181,
         "y": 1435,
@@ -1260,7 +1260,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0033": {
+    "SPORER_16": {
       "frame": {
         "x": 3181,
         "y": 1640,
@@ -1280,7 +1280,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0035": {
+    "SPORER_17": {
       "frame": {
         "x": 3181,
         "y": 1845,
@@ -1300,7 +1300,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0037": {
+    "SPORER_18": {
       "frame": {
         "x": 3181,
         "y": 2050,
@@ -1320,7 +1320,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0039": {
+    "SPORER_19": {
       "frame": {
         "x": 3181,
         "y": 2255,
@@ -1340,7 +1340,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0041": {
+    "SPORER_20": {
       "frame": {
         "x": 3181,
         "y": 2460,
@@ -1360,7 +1360,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0043": {
+    "SPORER_21": {
       "frame": {
         "x": 3181,
         "y": 2665,
@@ -1380,7 +1380,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0045": {
+    "SPORER_22": {
       "frame": {
         "x": 3181,
         "y": 2870,
@@ -1400,7 +1400,7 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0047": {
+    "SPORER_23": {
       "frame": {
         "x": 3181,
         "y": 3075,
@@ -1420,10 +1420,30 @@
         "h": 205
       }
     },
-    "OrangeSporeurGraine0049": {
+    "SPORER_24": {
       "frame": {
         "x": 3181,
         "y": 3280,
+        "w": 412,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 412,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 412,
+        "h": 205
+      }
+    },
+    "SPORER_25": {
+      "frame": {
+        "x": 1770,
+        "y": 3183,
         "w": 412,
         "h": 205
       },

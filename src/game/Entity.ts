@@ -80,9 +80,6 @@ export class Entity implements SimplePoint {
     if (this.type === EntityType.ROOT) {
       this.organDir = Direction.X
     }
-    if (OrganTypes.includes(this.type)) {
-      this.isGrowing = true
-    }
   }
 
   static clone(entity: Entity): Entity {

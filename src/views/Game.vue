@@ -380,7 +380,7 @@ export default defineComponent({
         for (const action of actions) {
           console.log('Processing action:', action)
           try {
-            this.state.applyAction(action)
+            this.state.applyAction(action, onlyNew)
           } catch (error) {
             console.error(`Error processing action:`, error)
           }
@@ -389,22 +389,17 @@ export default defineComponent({
         this.state.refreshProteinsAndWallsAfterAction()
 
         if (onlyNew) {
+          this.isCanvasAnimating = this.state.checkSporeAnimation()
+          await this.waitAnimation()
+
           this.isCanvasAnimating = this.state.checkGrowAnimation()
-          while (this.isCanvasAnimating) {
-            await sleep(100)
-          }
+          await this.waitAnimation()
 
           this.isCanvasAnimating = this.state.checkHarvesterAnimation()
-          console.log('Harvester animation:', this.isCanvasAnimating)
-          while (this.isCanvasAnimating) {
-            console.log('Harvester animation:', this.isCanvasAnimating)
-            await sleep(100)
-          }
+          await this.waitAnimation()
 
           this.isCanvasAnimating = this.state.checkTentacleAttacksAnimation()
-          while (this.isCanvasAnimating) {
-            await sleep(100)
-          }
+          await this.waitAnimation()
         }
 
         this.state.doTentacleAttacks()
@@ -415,6 +410,11 @@ export default defineComponent({
         gameCanvas.drawGrid()
       }
       console.debug('Actions handled')
+    },
+    async waitAnimation() {
+      while (this.isCanvasAnimating) {
+        await sleep(100)
+      }
     },
     addActionToRoot(action: GrowAction | SporeAction, rootId: number) {
       this.registredActionsPerRoot[rootId] = action

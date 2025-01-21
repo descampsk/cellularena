@@ -1,7 +1,15 @@
 import { AllDxDy, getDirection } from './helpers'
-import { Direction, Entity, EntityType, getDxDyFromDirection, Owner, ProteinTypes } from './Entity'
+import {
+  Direction,
+  Entity,
+  EntityType,
+  getDxDyFromDirection,
+  OrganTypes,
+  Owner,
+  ProteinTypes,
+} from './Entity'
 import { type SimplePoint } from './Point'
-import { GrowAction, WaitAction, type SporeAction } from './Actions'
+import { GrowAction, SporeAction, WaitAction } from './Actions'
 
 export const StringToEntityType = {
   EMPTY: EntityType.EMPTY,
@@ -306,7 +314,7 @@ export class State {
     return null
   }
 
-  public applyAction(action: GrowAction | SporeAction | WaitAction) {
+  public applyAction(action: GrowAction | SporeAction | WaitAction, withAnimation = false) {
     if (action instanceof WaitAction) {
       return
     }
@@ -356,6 +364,15 @@ export class State {
       throw new Error(`Cannot grow on top of an existing entity at ${target.x}, ${target.y}`)
     }
 
+    if (withAnimation) {
+      if (OrganTypes.includes(type)) {
+        newEntity.isGrowing = true
+      }
+      if (action instanceof SporeAction) {
+        parent.shouldBeAnimated = true
+      }
+    }
+
     this.nextOrganId += 1
 
     newEntity.oldEntity = entityAtTarget
@@ -367,6 +384,10 @@ export class State {
       this.proteinsPerPlayer[playerId][protein as keyof typeof proteinsNeeded] -=
         proteinsNeeded[protein as keyof typeof proteinsNeeded]
     }
+  }
+
+  public checkSporeAnimation() {
+    return this.entities.some((entity) => entity.type === 'SPORER' && entity.shouldBeAnimated)
   }
 
   public checkTentacleAttacksAnimation() {

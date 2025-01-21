@@ -192,7 +192,7 @@ export default defineComponent({
 
       // First draw non-animated entities
       this.state.entities
-        .filter((e) => !e.shouldBeAnimated)
+        .filter((e) => !e.shouldBeAnimated && !e.isGrowing)
         .forEach((entity) => {
           this.drawEntity(entity, 1.0)
         })
