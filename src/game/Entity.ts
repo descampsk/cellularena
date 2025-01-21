@@ -64,7 +64,9 @@ export class Entity implements SimplePoint {
 
   public shouldBeAnimated = false
 
-  public isGrowing = false
+  public isGrowing = true
+
+  public isDying = false
 
   constructor(
     public x: number,

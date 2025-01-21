@@ -38,7 +38,7 @@ interface SpriteSheetData {
   }
 }
 
-export const ORGAN_ANCHORS: Record<OrganType, { x: number; y: number }> = {
+export const ORGAN_ANCHORS: Record<OrganType | 'DEATH', { x: number; y: number }> = {
   BASIC: { x: 0.5, y: 0.5 },
   HARVESTER: { x: 84 / 503, y: 0.5 },
   ROOT: { x: 0.5, y: 0.5 },
@@ -50,6 +50,10 @@ export const ORGAN_ANCHORS: Record<OrganType, { x: number; y: number }> = {
     x: (73 + 241) / 2 / 581,
     y: (262 + 95) / 2 / 329,
   },
+  DEATH: {
+    x: (78 + 192 / 2) / 354,
+    y: (97 + 192 / 2) / 326,
+  },
 }
 
 const MAX_FRAME_ANIMATION = {
@@ -59,6 +63,7 @@ const MAX_FRAME_ANIMATION = {
   HARVESTER: 17,
   BASIC: 0,
   GROW: 7,
+  DEATH: 20,
 }
 
 const SPRITE_WIDTH_REF = 168
@@ -152,13 +157,19 @@ export class SpriteService {
       return false
     }
 
-    const animatedFrame = organ.isGrowing
-      ? this.frameData.frames[`GROW_${frameIndex}`]
-      : this.frameData.frames[`${organ.type}_${frameIndex}`]
+    let animatedFrame = this.frameData.frames[`${organ.type}_${frameIndex}`]
+    if (organ.isGrowing) {
+      animatedFrame = this.frameData.frames[`GROW_${frameIndex}`]
+    }
+    if (organ.isDying) {
+      animatedFrame = this.frameData.frames[`DEATH_${frameIndex}`]
+    }
 
     const frame = organ.shouldBeAnimated ? animatedFrame : this.frameData.frames[`${organ.type}_0`]
     if (!frame) {
-      console.error(`Sprite "${organ.type}" not found in the spritesheet`)
+      console.error(
+        `Sprite "${animatedFrame}" or "${`${organ.type}_0`}" not found in the spritesheet`,
+      )
       return false
     }
 
@@ -175,7 +186,10 @@ export class SpriteService {
       ctx.rotate(rotation)
     }
 
-    const anchor = ORGAN_ANCHORS[organ.type as OrganType]
+    let anchor = ORGAN_ANCHORS[organ.type as OrganType]
+    if (organ.isDying) {
+      anchor = ORGAN_ANCHORS.DEATH
+    }
 
     const padding = cellSize / 12
 
@@ -194,10 +208,17 @@ export class SpriteService {
 
     ctx.restore()
 
-    const maxFrame = MAX_FRAME_ANIMATION[organ.isGrowing ? 'GROW' : (organ.type as OrganType)]
+    let maxFrame = MAX_FRAME_ANIMATION[organ.type as OrganType]
+    if (organ.isGrowing) {
+      maxFrame = MAX_FRAME_ANIMATION.GROW
+    } else if (organ.isDying) {
+      maxFrame = MAX_FRAME_ANIMATION.DEATH
+    }
+
     if (frameIndex >= maxFrame) {
       organ.shouldBeAnimated = false
       organ.isGrowing = false
+      organ.isDying = false
       return false
     }
 

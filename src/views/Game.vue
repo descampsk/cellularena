@@ -217,6 +217,8 @@ export default defineComponent({
     this.playerId = game.playerIds[this.playerUuid]
 
     await this.initializeGame(game.seed)
+    this.state.cleanGrowingOrgans()
+
     const serializedState = this.getSerializedState()
     const isMapYSymmetrical = this.state.checkYSymmetry()
 
@@ -403,6 +405,14 @@ export default defineComponent({
         }
 
         this.state.doTentacleAttacks()
+
+        if (onlyNew) {
+          this.isCanvasAnimating = this.state.checkIsDyingAnimation()
+          await this.waitAnimation()
+        }
+
+        this.state.cleanOldOrgans()
+        this.state.cleanGrowingOrgans()
       }
 
       const gameCanvas = this.$refs.gameCanvas as typeof GameCanvas

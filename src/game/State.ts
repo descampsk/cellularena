@@ -204,6 +204,7 @@ export class State {
     return this.getNeighboursButWall(point).some((p) => {
       const t = this.getEntityAt(p)
       return (
+        !t.isGrowing &&
         t.owner === owner &&
         t.type === EntityType.TENTACLE &&
         // t.x === point.x &&
@@ -386,36 +387,6 @@ export class State {
     }
   }
 
-  public checkSporeAnimation() {
-    return this.entities.some((entity) => entity.type === 'SPORER' && entity.shouldBeAnimated)
-  }
-
-  public checkTentacleAttacksAnimation() {
-    let shouldBeAnimated = false
-    const tentacles = this.entities.filter((entity) => entity.type === EntityType.TENTACLE)
-    tentacles.forEach((tentacle) => {
-      const [dx, dy] = DirectionToDxDy[tentacle.organDir]
-      const target = this.getEntityAt({ x: tentacle.x + dx, y: tentacle.y + dy })
-      if (target.owner !== Owner.NONE && target.owner !== tentacle.owner) {
-        tentacle.shouldBeAnimated = true
-        shouldBeAnimated = true
-      }
-    })
-    return shouldBeAnimated
-  }
-
-  public checkGrowAnimation() {
-    let shouldBeAnimated = false
-    this.entities
-      .filter((entity) => entity.isGrowing)
-      .forEach((entity) => {
-        shouldBeAnimated = true
-        entity.shouldBeAnimated = true
-      })
-
-    return shouldBeAnimated
-  }
-
   public doTentacleAttacks() {
     const tentacles = this.entities.filter((entity) => entity.type === EntityType.TENTACLE)
     const entitiesToDestroy: Entity[] = []
@@ -441,7 +412,7 @@ export class State {
     console.log('entitiesToDestroy', entitiesToDestroy)
 
     entitiesToDestroy.forEach((entity) => {
-      this.grid[entity.x + entity.y * this.width] = new Entity(
+      const newEntity = new Entity(
         entity.x,
         entity.y,
         EntityType.EMPTY,
@@ -451,6 +422,10 @@ export class State {
         0,
         0,
       )
+      newEntity.oldEntity = entity
+      newEntity.oldEntity.isDying = true
+      this.grid[entity.x + entity.y * this.width] = newEntity
+      this.entities.push(newEntity)
     })
   }
 
@@ -458,6 +433,61 @@ export class State {
     this.refreshProteins()
     this.doWallCollisions()
     this.retrieveProteinsBonus()
+  }
+
+  public checkSporeAnimation() {
+    return this.entities.some((entity) => entity.type === 'SPORER' && entity.shouldBeAnimated)
+  }
+
+  public checkTentacleAttacksAnimation() {
+    let shouldBeAnimated = false
+    const tentacles = this.entities.filter((entity) => entity.type === EntityType.TENTACLE)
+    tentacles.forEach((tentacle) => {
+      const [dx, dy] = DirectionToDxDy[tentacle.organDir]
+      const target = this.getEntityAt({ x: tentacle.x + dx, y: tentacle.y + dy })
+      if (target.owner !== Owner.NONE && target.owner !== tentacle.owner) {
+        tentacle.shouldBeAnimated = true
+        shouldBeAnimated = true
+      }
+    })
+    return shouldBeAnimated
+  }
+
+  public checkIsDyingAnimation() {
+    let shouldBeAnimated = false
+    this.entities
+      .filter((entity) => entity.oldEntity && entity.oldEntity.isDying)
+      .forEach((entity) => {
+        shouldBeAnimated = true
+        entity.shouldBeAnimated = true
+        entity.oldEntity!.shouldBeAnimated = true
+      })
+
+    return shouldBeAnimated
+  }
+
+  public cleanOldOrgans() {
+    this.entities.forEach((entity) => {
+      entity.oldEntity = null
+    })
+  }
+
+  public cleanGrowingOrgans() {
+    this.entities.forEach((entity) => {
+      entity.isGrowing = false
+    })
+  }
+
+  public checkGrowAnimation() {
+    let shouldBeAnimated = false
+    this.entities
+      .filter((entity) => entity.isGrowing)
+      .forEach((entity) => {
+        shouldBeAnimated = true
+        entity.shouldBeAnimated = true
+      })
+
+    return shouldBeAnimated
   }
 
   public checkHarvesterAnimation() {
@@ -474,7 +504,6 @@ export class State {
         shouldBeAnimated = true
       })
     })
-    console.log(this.entities.filter((e) => e.shouldBeAnimated))
     return shouldBeAnimated
   }
 
@@ -497,7 +526,7 @@ export class State {
   public doWallCollisions() {
     const entitiesToBecomeWall = this.entities.filter((entity) => {
       const oldEntity = entity.oldEntity
-      if (!oldEntity) return false
+      if (!oldEntity || oldEntity.isDying) return false
 
       if ([EntityType.EMPTY].includes(oldEntity.type)) {
         entity.oldEntity = null

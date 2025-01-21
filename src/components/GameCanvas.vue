@@ -278,7 +278,20 @@ export default defineComponent({
         if (!shouldContinueAnimating && isAnimating) {
           shouldContinueAnimating = true
         }
-      } else {
+      } else if (entity.oldEntity?.isDying) {
+        console.log('Drawing dying entity', entity)
+        const spriteService = this.spritesPerPlayer[entity.oldEntity.owner as Owner.ONE | Owner.TWO]
+        const isAnimating = spriteService.drawOrgan(
+          this.ctx,
+          entity.oldEntity,
+          this.cellSize,
+          opacity,
+          frameCount,
+        )
+        if (!shouldContinueAnimating && isAnimating) {
+          shouldContinueAnimating = true
+        }
+      } else if (entity.type !== EntityType.EMPTY) {
         const image = this.images[entity.type]
         if (image) {
           this.ctx.save()
