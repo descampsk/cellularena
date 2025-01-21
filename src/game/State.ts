@@ -317,6 +317,14 @@ export class State {
       throw new Error('Root can only be grown with SporeAction')
     }
 
+    const otherPlayer = playerId === Owner.ONE ? Owner.TWO : Owner.ONE
+    const isAlreadyDefended = this.isAlreadyDefended(target, otherPlayer)
+    if (isAlreadyDefended) {
+      throw new Error(
+        `Cannot grow on a cell ${target.x},${target.y} that is already defended by the opponent`,
+      )
+    }
+
     const proteinCost = ProteinsPerOrgan[type as OrganType]
     const playerProteins = this.proteinsPerPlayer[playerId]
     const hasEnoughProteins = (Object.keys(proteinCost) as ProteinType[]).every(
