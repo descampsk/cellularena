@@ -118,6 +118,7 @@ export class EndGameChecker {
 
     if (
       secureScorePlayerOne > totalCell / 2 &&
+      secureScorePlayerOne > secureScorePlayerTwo &&
       this.canPlayerMoveUndefinetly(Owner.ONE) &&
       this.canGrowAnyOrgan(Owner.ONE)
     ) {
@@ -126,10 +127,23 @@ export class EndGameChecker {
 
     if (
       secureScorePlayerTwo > totalCell / 2 &&
+      secureScorePlayerTwo > secureScorePlayerOne &&
       this.canPlayerMoveUndefinetly(Owner.TWO) &&
       this.canGrowAnyOrgan(Owner.TWO)
     ) {
       return Owner.TWO
+    }
+
+    if (
+      secureScorePlayerOne > totalCell / 2 &&
+      secureScorePlayerTwo > totalCell / 2 &&
+      secureScorePlayerOne === secureScorePlayerTwo &&
+      this.canPlayerMoveUndefinetly(Owner.ONE) &&
+      this.canGrowAnyOrgan(Owner.ONE) &&
+      this.canPlayerMoveUndefinetly(Owner.TWO) &&
+      this.canGrowAnyOrgan(Owner.TWO)
+    ) {
+      return Owner.NONE
     }
 
     return null
