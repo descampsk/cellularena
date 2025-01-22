@@ -592,6 +592,7 @@ export class State {
     inputs.push(`${this.width} ${this.height}`)
     inputs.push(`${this.entities.length}`)
     this.entities.forEach((entity) => {
+      if (entity.type === EntityType.EMPTY) return
       inputs.push(
         `${entity.x} ${entity.y} ${entity.type} ${entity.owner} ${entity.organId} ${entity.organDir} ${entity.organParentId} ${entity.organRootId}`,
       )

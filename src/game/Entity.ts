@@ -79,7 +79,7 @@ export class Entity implements SimplePoint {
     public organRootId: number,
   ) {
     this.isProtein = ProteinTypes.includes(this.type)
-    if (this.type === EntityType.ROOT) {
+    if (this.type === EntityType.ROOT || this.type === EntityType.BASIC) {
       this.organDir = Direction.X
     }
   }

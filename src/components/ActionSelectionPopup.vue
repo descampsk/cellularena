@@ -16,7 +16,7 @@
           </div>
           <div class="organs">
             <img
-              v-for="direction in directions"
+              v-for="direction in directionsButX"
               :key="direction"
               :src="getImage(organ)"
               :style="getStyle(organ as OrganType, direction)"
@@ -39,8 +39,8 @@
           <div class="organs">
             <img
               :src="getImage(organ)"
-              :style="getStyle(organ as OrganType, Direction.X)"
-              @click="selectAction(organ as OrganType, Direction.X)"
+              :style="getStyle(organ as OrganType, directionX)"
+              @click="selectAction(organ as OrganType, directionX)"
             />
           </div>
         </div>
@@ -95,7 +95,8 @@ export default defineComponent({
         EntityType.TENTACLE,
         EntityType.SPORER,
       ],
-      directions: [Direction.N, Direction.E, Direction.S, Direction.W],
+      directionsButX: [Direction.N, Direction.E, Direction.S, Direction.W],
+      directionX: Direction.X,
       proteinsImagePerOrgan: {
         [EntityType.BASIC]: ['a'],
         [EntityType.ROOT]: ['a', 'b', 'c', 'd'],
