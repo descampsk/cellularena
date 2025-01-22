@@ -589,10 +589,11 @@ export class State {
   createInputsForAI(playerId: Owner.ONE | Owner.TWO): string[] {
     const otherPlayerId = playerId === Owner.ONE ? Owner.TWO : Owner.ONE
     const inputs = []
+    const entitiesButEmpty = this.entities.filter((e) => e.type !== EntityType.EMPTY)
+
     inputs.push(`${this.width} ${this.height}`)
-    inputs.push(`${this.entities.length}`)
-    this.entities.forEach((entity) => {
-      if (entity.type === EntityType.EMPTY) return
+    inputs.push(`${entitiesButEmpty.length}`)
+    entitiesButEmpty.forEach((entity) => {
       inputs.push(
         `${entity.x} ${entity.y} ${entity.type} ${entity.owner} ${entity.organId} ${entity.organDir} ${entity.organParentId} ${entity.organRootId}`,
       )
