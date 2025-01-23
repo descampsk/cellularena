@@ -360,8 +360,9 @@ export default defineComponent({
       const actionDocs = await getDocs(this.actionsRef)
       const newActions = actionDocs.docs
         .map((d) => d.data())
+        .filter((a) => !(a instanceof WaitAction))
         .filter(
-          (a) => !(a instanceof WaitAction) && (!onlyNew || a.turn === this.state.turn - 1),
+          (a) => (!onlyNew && a.turn <= this.state.turn - 1) || a.turn === this.state.turn - 1,
         ) as (GrowAction | SporeAction)[]
 
       newActions.sort((a, b) => {
@@ -486,7 +487,6 @@ export default defineComponent({
       const botPlayerId = this.playerId === Owner.ONE ? Owner.TWO : Owner.ONE
 
       const inputs = this.state.createInputsForAI(botPlayerId)
-      console.log(inputs.join('\n'))
 
       const actionsStr = this.bot.run(inputs)
       console.log(actionsStr)
@@ -545,6 +545,7 @@ export default defineComponent({
     async replayNextTurn() {
       this.state.turn++
       this.handleActions(true)
+      this.getSerializedState()
       await this.handleEndGame()
     },
     handleGiveUp() {
