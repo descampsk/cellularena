@@ -347,6 +347,9 @@ export class State {
     if (!parent) {
       throw new Error(`Cannot find parent organ with id ${organId}`)
     }
+    if (parent.owner !== playerId) {
+      throw new Error(`Cannot grow from an organ that does not belong to the player`)
+    }
 
     const organRootId = parent.type === EntityType.ROOT ? parent.organId : parent.organRootId
 
@@ -607,6 +610,8 @@ export class State {
     inputs.push(
       `${this.entities.filter((e) => e.type === EntityType.ROOT && e.owner === playerId).length}`,
     )
+
+    console.debug('State', inputs.join('\n'))
 
     return inputs
   }
