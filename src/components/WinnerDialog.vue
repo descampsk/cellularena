@@ -23,12 +23,17 @@
       </div>
 
       <div class="actions">
-        <button class="action-button" @click="playAgain">Play Again</button>
+        <button class="action-button" @click="showNewGameDialog = true">New Game</button>
         <button class="action-button" @click="watchReplay">Watch Replay</button>
         <button class="action-button" @click="goToMenu">Menu</button>
       </div>
     </div>
   </div>
+  <NewGameDialog
+    :show="showNewGameDialog"
+    @close="showNewGameDialog = false"
+    @select="handleNewGame"
+  />
 </template>
 
 <script lang="ts">
@@ -37,9 +42,13 @@ import router from '@/router'
 import { doc, getFirestore, setDoc } from 'firebase/firestore'
 import { Game, gameFirestoreConvertor } from '@/game/Game'
 import { Owner } from '@/game/Entity'
+import NewGameDialog from './NewGameDialog.vue'
 
 export default defineComponent({
   name: 'WinnerDialog',
+  components: {
+    NewGameDialog,
+  },
   props: {
     show: {
       type: Boolean,
@@ -65,6 +74,11 @@ export default defineComponent({
       type: Number as PropType<Owner.ONE | Owner.TWO>,
       required: true,
     },
+  },
+  data() {
+    return {
+      showNewGameDialog: false,
+    }
   },
   computed: {
     winnerAnnouncement(): string {
@@ -94,6 +108,32 @@ export default defineComponent({
         ([, id]) => id === this.playerId,
       )?.[0]
       router.push(`/game/${newGame.id}/player/${playerUuid}`)
+    },
+    async playSameSeed() {
+      const db = getFirestore()
+      const newGame = new Game({
+        seed: this.game.seed,
+        mode: this.game.mode,
+        playerIds: { ...this.game.playerIds },
+        botName: this.game.botName,
+      })
+
+      const gameDoc = doc(db, 'games', newGame.id).withConverter(gameFirestoreConvertor)
+      await setDoc(gameDoc, newGame)
+
+      const playerUuid = Object.entries(this.game.playerIds).find(
+        ([, id]) => id === this.playerId,
+      )?.[0]
+      router.push(`/game/${newGame.id}/player/${playerUuid}`)
+    },
+    async handleNewGame(type: 'same' | 'new') {
+      this.showNewGameDialog = false
+      if (type === 'same') {
+        console.log('Playing same seed')
+        await this.playSameSeed()
+      } else {
+        await this.playAgain()
+      }
     },
     watchReplay() {
       const playerUuid = Object.entries(this.game.playerIds).find(
