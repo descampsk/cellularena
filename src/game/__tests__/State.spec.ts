@@ -64,7 +64,7 @@ describe('State', () => {
     beforeEach(() => {
       state.refreshState([
         '1',
-        '1 1 ROOT 1 1 N 0 1',
+        '1 1 ROOT 0 1 N 0 1',
         '5 5 5 5', // Enough proteins for any action
         '0 0 0 0',
         '1',
