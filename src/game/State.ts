@@ -433,8 +433,8 @@ export class State {
   }
 
   public refreshProteinsAndWallsAfterAction() {
-    this.refreshProteins()
     this.doWallCollisions()
+    this.refreshProteins()
     this.retrieveProteinsBonus()
   }
 
