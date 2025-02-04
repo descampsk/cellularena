@@ -17,6 +17,6 @@ export const Bots: Record<BotName, Bot> = {
   reCurse: {
     description: "reCurse winner contest's bot",
     elo: 32.69,
-    availibility: 'BETA',
+    availibility: 'ALPHA',
   },
 }
