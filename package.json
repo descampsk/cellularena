@@ -26,7 +26,7 @@
     "vuefire": "3.2.1"
   },
   "devDependencies": {
-    "@sentry/wizard": "4.1.0",
+    "@sentry/wizard": "4.2.0",
     "@tsconfig/node22": "^22.0.0",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^22.10.2",
