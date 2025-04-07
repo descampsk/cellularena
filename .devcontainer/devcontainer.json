@@ -11,7 +11,7 @@
     "ghcr.io/rio/features/chezmoi:1": {},
     "ghcr.io/itsmechlark/features/doppler:2": {},
     "ghcr.io/devcontainers-extra/features/firebase-cli:2": {},
-    "ghcr.io/devcontainers/features/java:1.5.0": {}
+    "ghcr.io/devcontainers/features/java:1.6.3": {}
   },
 
   // Features to add to the dev container. More info: https://containers.dev/features.
