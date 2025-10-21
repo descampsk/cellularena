@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@sentry/vite-plugin": "^4.0.0",
-    "@sentry/vue": "10.20.0",
+    "@sentry/vue": "10.21.0",
     "firebase": "12.4.0",
     "pinia": "^3.0.0",
     "uuid": "13.0.0",
