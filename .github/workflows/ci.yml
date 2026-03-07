@@ -16,7 +16,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Doppler CLI
-        uses: dopplerhq/cli-action@v3
+        uses: dopplerhq/cli-action@v4
 
       - name: Install
         run: npm ci
