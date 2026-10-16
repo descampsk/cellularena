@@ -16,7 +16,7 @@
     "generate:maps": "node scripts/generateMapSeeds.js"
   },
   "dependencies": {
-    "@sentry/vite-plugin": "^5.0.0",
+    "@sentry/vite-plugin": "^11.0.0",
     "@sentry/vue": "11.8.0",
     "firebase": "12.19.0",
     "pinia": "^4.0.0",
